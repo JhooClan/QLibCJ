@@ -43,7 +43,7 @@ class QRegistry:
                     if (i != 0 and cnt % i == 0):
                         rdy = not rdy
                     if (rdy):
-                        p += self.state[0,i]
+                        p += cm.polar(self.state[0,i])[0]**2
                 if (r < p):
                     self.measure[qbit] = 0
                 else:
