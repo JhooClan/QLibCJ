@@ -18,10 +18,13 @@ class QRegistry:
                     qbit.dtype == 'complex128' for qbit in qbits)):
             raise ValueError('Impossible QuBit Registry')
 
-        self.state = qbits[0]
+        qbs = qbits[:]
+        self.state = qbs[0]
+        Normalize(self.state)
         self.measure = [-1]
-        del qbits[0]
-        for qbit in qbits:
+        del qbs[0]
+        for qbit in qbs:
+            Normalize(qbit)
             self.state = np.kron(self.state, qbit)
             self.measure.append(-1)
         Normalize(self.state)
@@ -30,9 +33,9 @@ class QRegistry:
         if (type(mask) != list or \
             not all(type(num) == int for num in mask)):
             raise ValueError('Not valid mask')
-        r = rnd.random()
         for qbit in mask:
             if (self.measure[qbit] == -1):
+                r = rnd.random()
                 p = 0
                 cnt = self.state.size/(2**(qbit + 1))
                 rdy = True
