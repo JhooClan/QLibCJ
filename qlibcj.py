@@ -9,6 +9,26 @@ import random as rnd
 # Para multiplicar las matrices A y V se usa np.dot(A,B)
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
+class QRegistry:
+    def __init__(self, qbits):
+        if (type(qbits) != list or \
+            not qbits or \
+            not all(type(qbit) == np.ndarray and \
+                    qbit.shape == (1,2) and \
+                    qbit.dtype == 'complex128') for qbit in qbits):
+            raise ValueError('Impossible QuBit Registry')
+
+        self.state = qbits[0]
+        del qbits[0]
+        for qbit in qbits
+        self.state = np.kron(self.state, qbit)
+
+    def Measure(self, mask):
+        if (type(mask) != list or \
+            not all(type(num) == int) for number in mask):
+            raise ValueError('Not valid mask')
+
+
 def Seed(s): # Asigna la semilla a la hora de trabajar con aleatorios, permitiendo repetir experimentos
     rnd.seed(s)
 
