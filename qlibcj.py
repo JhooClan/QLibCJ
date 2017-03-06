@@ -37,13 +37,16 @@ class QRegistry:
             if (self.measure[qbit] == -1):
                 r = rnd.random()
                 p = 0
-                cnt = self.state.size/(2**(qbit + 1))
+                max = 2**qbit
+				cnt = 0
                 rdy = True
                 for i in range(0, self.state.size):
-                    if (i != 0 and cnt % i == 0):
+                    if (cnt == max):
                         rdy = not rdy
+                        cnt = 0
                     if (rdy):
                         p += cm.polar(self.state[0,i])[0]**2
+                    cnt += 1
                 if (r < p):
                     self.measure[qbit] = 0
                 else:
@@ -51,6 +54,24 @@ class QRegistry:
 
     def ApplyGate(self, gate):
         self.state = np.dot(Bra(self.state), gate)
+
+
+def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
+    p = 0
+    if (x < q.size):
+        p = cm.polar(q[0,x])[0]**2
+    return p
+
+def Measure(q): # Toma una medida del QuBit pasado como parametro
+    r = rnd.random()
+    ms = 0
+    for i in range(0, q.size):
+        p = Prob(q, i)
+        if (r < p):
+            ms = i
+            break
+        r -= p
+    return ms
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
     H = 1 / m.sqrt(2) * np.ones((2,2), dtype=complex)
