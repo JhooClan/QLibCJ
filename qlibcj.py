@@ -35,9 +35,9 @@ class QRegistry:
             if (self.measure[qbit] == -1):
                 p = 0
                 cnt = self.state.size/(2**(qbit + 1))
-                rdy = False
+                rdy = True
                 for i in range(0, self.state.size):
-                    if (cnt % i == 0):
+                    if (i != 0 and cnt % i == 0):
                         rdy = not rdy
                     if (rdy):
                         p += self.state[0,i]
