@@ -10,7 +10,7 @@ import random as rnd
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
 class QRegistry:
-    def __init__(self, qbits, seed):    # QuBit list and seed for the Pseudo Random Number Generation.
+    def __init__(self, qbits):    # QuBit list and seed for the Pseudo Random Number Generation.
         if (type(qbits) != list or \
             not qbits or \
             not all(type(qbit) == np.ndarray and \
@@ -25,7 +25,6 @@ class QRegistry:
             self.state = np.kron(self.state, qbit)
             self.measure.append(-1)
         Normalize(self.state)
-        rnd.seed(seed)
 
     def Measure(self, mask):
         if (type(mask) != list or \
