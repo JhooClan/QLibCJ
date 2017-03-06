@@ -98,26 +98,26 @@ def DJOracle(x, y, f): # Implementa el oraculo Uf descrito en el algoritmo de De
 
 def Separate(state):
     sol = [state]
-    ukw = ()
+    ukw = sp.symbols('x1, x2')
     eq = ()
     ss = state.size
     if (ss > 2):
         ukws = int(m.log(ss,2)) * 2 # Numero de incognitas, siempre es entero
-        for i in range(0, ukws): # Creacion de la tupla de incognitas
-            ukw += (sp.symbols('x' + str(i)),)
-        j = 0
-        for i in range(0, ukws - 2): # Creacion de la tupla de funciones
-            eq += (ukw[i] * ukw[ukws - 2] - state[0, j], ukw[i] * ukw[ukws - 1] - state[0, j + 1],)
-            j += 2
-        for i in range(0, int(ukws/2), 2):
-            eq += (ukw[i]**2 + ukw[i + 1]**2 - 1,)
+        for i in range(0, ukws - 2): # Creacion de la tupla de incognitas
+            ukw += (sp.symbols('y' + str(i)),)
+        for i in range(2, ukws): # Creacion de la tupla de funciones
+            eq += (ukw[0] * ukw[i] - state[0, i - 2], ukw[1] * ukw[i] - state[0, i - 2 + int(ss/2)],)
+        f = -1
+        for i in range(2, ukws):
+            f += ukw[i]**2
+        eq += (ukw[0]**2 + ukw[1]**2 - 1, f)
         sols = sp.solvers.solve(eq, ukw)
         auxs = []
         for s in sols:
-            auxa = np.array([s[i] for i in range(0, ukws - 2)], dtype=complex)
-            auxa.shape = (1,auxa.size)
-            auxb = np.array([s[ukws - 2], s[ukws - 1]], dtype=complex)
-            auxb.shape = (1,2)
+            auxa = np.array([s[0], s[1]], dtype=complex)
+            auxa.shape = (1,2)
+            auxb = np.array([s[i] for i in range(2, ukws)], dtype=complex)
+            auxb.shape = (1,auxb.size)
             if (QEq(Superposition(auxa, auxb), state)):
                 sol = Separate(auxa) + Separate(auxb)
                 break
