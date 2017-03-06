@@ -20,8 +20,8 @@ class QRegistry:
 
         self.state = qbits[0]
         del qbits[0]
-        for qbit in qbits
-        self.state = np.kron(self.state, qbit)
+        for qbit in qbits:
+            self.state = np.kron(self.state, qbit)
 
     def Measure(self, mask):
         if (type(mask) != list or \
