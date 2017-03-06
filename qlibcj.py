@@ -6,11 +6,11 @@ import random as rnd
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
 # La multiplicacion por un escalar se hace con *. n * A
-# Para multiplicar las matrices A y V se usa np.dot(A,B)
+# Para multiplicar las matrices A y B se usa np.dot(A,B)
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
 class QRegistry:
-    def __init__(self, qbits):
+    def __init__(self, qbits, seed):    # QuBit list and seed for the Pseudo Random Number Generation.
         if (type(qbits) != list or \
             not qbits or \
             not all(type(qbit) == np.ndarray and \
@@ -19,35 +19,36 @@ class QRegistry:
             raise ValueError('Impossible QuBit Registry')
 
         self.state = qbits[0]
+        self.measure = []
         del qbits[0]
         for qbit in qbits:
             self.state = np.kron(self.state, qbit)
+            self.measure.append(-1)
+        Normalize(self.state)
+        rnd.seed(seed)
 
     def Measure(self, mask):
         if (type(mask) != list or \
             not all(type(num) == int) for number in mask):
             raise ValueError('Not valid mask')
+        r = rnd.random()
+        for qbit in mask:
+            if (self.measure[qbit] != -1):
+                p = 0
+                cnt = self.state.size/(2**(qbit + 1))
+                rdy = False
+                for i in range(0, self.state.size):
+                    if (cnt % i == 0):
+                        rdy = not rdy
+                    if (rdy):
+                        p += self.state[0,i]
+                if (r < p):
+                    self.measure[qbit] = 0
+                else:
+                    self.measure[qbit] = 1
 
-
-def Seed(s): # Asigna la semilla a la hora de trabajar con aleatorios, permitiendo repetir experimentos
-    rnd.seed(s)
-
-def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
-    p = 0
-    if (x < q.size):
-        p = cm.polar(q[0,x])[0]**2
-    return p
-
-def Measure(q): # Toma una medida del QuBit pasado como parametro
-    r = rnd.random()
-    ms = 0
-    for i in range(0, q.size):
-        p = Prob(q, i)
-        if (r < p):
-            ms = i
-            break
-        r -= p
-    return ms
+    def ApplyGate(self, gate):
+        self.state = np.dot(Bra(self.state), gate)
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
     H = 1 / m.sqrt(2) * np.ones((2,2), dtype=complex)
