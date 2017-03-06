@@ -19,7 +19,7 @@ class QRegistry:
             raise ValueError('Impossible QuBit Registry')
 
         self.state = qbits[0]
-        self.measure = []
+        self.measure = [-1]
         del qbits[0]
         for qbit in qbits:
             self.state = np.kron(self.state, qbit)
