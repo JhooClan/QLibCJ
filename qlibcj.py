@@ -15,7 +15,7 @@ class QRegistry:
             not qbits or \
             not all(type(qbit) == np.ndarray and \
                     qbit.shape == (1,2) and \
-                    qbit.dtype == 'complex128') for qbit in qbits):
+                    qbit.dtype == 'complex128' for qbit in qbits)):
             raise ValueError('Impossible QuBit Registry')
 
         self.state = qbits[0]
