@@ -32,7 +32,7 @@ class QRegistry:
             raise ValueError('Not valid mask')
         r = rnd.random()
         for qbit in mask:
-            if (self.measure[qbit] != -1):
+            if (self.measure[qbit] == -1):
                 p = 0
                 cnt = self.state.size/(2**(qbit + 1))
                 rdy = False
