@@ -28,7 +28,7 @@ class QRegistry:
 
     def Measure(self, mask):
         if (type(mask) != list or \
-            not all(type(num) == int) for number in mask):
+            not all(type(num) == int for number in mask)):
             raise ValueError('Not valid mask')
         r = rnd.random()
         for qbit in mask:
