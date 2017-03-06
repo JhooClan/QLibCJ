@@ -38,7 +38,7 @@ class QRegistry:
                 r = rnd.random()
                 p = 0
                 max = 2**qbit
-				cnt = 0
+                cnt = 0
                 rdy = True
                 for i in range(0, self.state.size):
                     if (cnt == max):
