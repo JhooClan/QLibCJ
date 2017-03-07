@@ -96,6 +96,21 @@ def QOne(): # Devuelve un QuBit en el estado 1
     q.shape = (1,2)
     return q
 
+def PauliX(): # Also known as NOT
+    px = np.array([0,1,1,0], dtype=complex)
+    px.shape = (2,2)
+    return px
+
+def PauliY():
+    py = np.array([0,-1j,1j,0], dtype=complex)
+    py.shape = (2,2)
+    return py
+
+def PauliZ():
+    pz = np.array([1,0,0,-1], dtype=complex)
+    pz.shape = (2,2)
+    return pz
+
 def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
     b = v[:]
     s = v.shape
