@@ -31,11 +31,14 @@ class QRegistry:
         if (type(mask) != list or \
             not all(type(num) == int for num in mask)):
             raise ValueError('Not valid mask')
+        tq = m.log(self.state.size,  2)
+        if (not all(num < tq and num > -1 for num in mask)):
+            raise ValueError('Out of range')
         measure = []
         for qbit in mask:
             r = rnd.random()
             p = 0
-            max = 2**qbit
+            max = 2**(tq - (qbit + 1))
             cnt = 0
             rdy = True
             for i in range(0, self.state.size):
@@ -46,11 +49,11 @@ class QRegistry:
                     p += cm.polar(self.state[0,i])[0]**2
                 cnt += 1
             if (r < p):
-                m = 0
+                me = 0
             else:
-                m = 1
-            measure.append(m)
-            self.Collapse(qbit, m)
+                me = 1
+            measure.append(me)
+            self.Collapse((tq - (qbit + 1)), me)
         return measure
 
     def ApplyGate(self, gate):
@@ -185,7 +188,6 @@ def Separate(state):
             f += ukw[i]**2
         eq += (ukw[0]**2 + ukw[1]**2 - 1, f)
         sols = sp.solvers.solve(eq, ukw)
-        auxs = []
         for s in sols:
             auxa = np.array([s[0], s[1]], dtype=complex)
             auxa.shape = (1,2)
