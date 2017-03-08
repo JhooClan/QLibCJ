@@ -17,8 +17,8 @@ class QRegistry:
                     qbit.shape == (1,2) and \
                     qbit.dtype == 'complex128' for qbit in qbits)):
             raise ValueError('Impossible QuBit Registry')
-
         qbs = qbits[:]
+
         self.state = qbs[0]
         Normalize(self.state)
         self.measure = [-1]
@@ -33,27 +33,41 @@ class QRegistry:
         if (type(mask) != list or \
             not all(type(num) == int for num in mask)):
             raise ValueError('Not valid mask')
+        measure = []
         for qbit in mask:
-            if (self.measure[qbit] == -1):
-                r = rnd.random()
-                p = 0
-                max = 2**qbit
-                cnt = 0
-                rdy = True
-                for i in range(0, self.state.size):
-                    if (cnt == max):
-                        rdy = not rdy
-                        cnt = 0
-                    if (rdy):
-                        p += cm.polar(self.state[0,i])[0]**2
-                    cnt += 1
-                if (r < p):
-                    self.measure[qbit] = 0
-                else:
-                    self.measure[qbit] = 1
+            r = rnd.random()
+            p = 0
+            max = 2**qbit
+            cnt = 0
+            rdy = True
+            for i in range(0, self.state.size):
+                if (cnt == max):
+                    rdy = not rdy
+                    cnt = 0
+                if (rdy):
+                    p += cm.polar(self.state[0,i])[0]**2
+                cnt += 1
+            if (r < p):
+                m = 0
+            else:
+                m = 1
+            measure.append(m)
+            Collapse(qbit, m)
 
     def ApplyGate(self, gate):
         self.state = np.dot(Bra(self.state), gate)
+    
+    def Collapse(self, qbit, measure):
+        max = 2**qbit
+        cnt = 0
+        rdy = measure == 1
+        for i in range(0, self.state.size):
+            if (cnt == max):
+                rdy = not rdy
+                cnt = 0
+            if (rdy):
+                self.state[0,i] = 0j
+            cnt += 1
 
 
 def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
