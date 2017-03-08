@@ -21,12 +21,10 @@ class QRegistry:
 
         self.state = qbs[0]
         Normalize(self.state)
-        self.measure = [-1]
         del qbs[0]
         for qbit in qbs:
             Normalize(qbit)
             self.state = np.kron(self.state, qbit)
-            self.measure.append(-1)
         Normalize(self.state)
 
     def Measure(self, mask):
@@ -52,7 +50,8 @@ class QRegistry:
             else:
                 m = 1
             measure.append(m)
-            Collapse(qbit, m)
+            self.Collapse(qbit, m)
+        return measure
 
     def ApplyGate(self, gate):
         self.state = np.dot(Bra(self.state), gate)
@@ -68,6 +67,7 @@ class QRegistry:
             if (rdy):
                 self.state[0,i] = 0j
             cnt += 1
+        Normalize(self.state)
 
 
 def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
