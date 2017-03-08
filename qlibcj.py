@@ -63,13 +63,16 @@ class QRegistry:
         max = 2**qbit
         cnt = 0
         rdy = measure == 1
+        mfd = []
         for i in range(0, self.state.size):
             if (cnt == max):
                 rdy = not rdy
                 cnt = 0
             if (rdy):
-                self.state[0,i] = 0j
+                mfd.append(i)
             cnt += 1
+        for qbit in mfd[::-1]:
+            self.state = np.delete(self.state, qbit, 1)
         Normalize(self.state)
 
 
