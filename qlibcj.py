@@ -169,6 +169,9 @@ def CNOT(): # Devuelve una compuerta CNOT para dos QuBits
     cn[3,2] = 1
     return cn
 
+def I(): # Devuelve una compuerta CNOT para dos QuBits
+    return np.array([[1,0],[0,1]], dtype=complex)
+
 #def DJOracle(x, y, f): # Implementa el oraculo Uf descrito en el algoritmo de Deutsch-Jozsa, colocando en y el resultado de y XOR f(x)
 #    return (x, ApplyGate(Superposition(y, f(x)), CNOT()))
 
