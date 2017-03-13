@@ -69,10 +69,8 @@ class QRegistry:
                 rdy = not rdy
                 cnt = 0
             if (rdy):
-                mfd.append(i)
+                self.state[0, i] = 0
             cnt += 1
-        for qbit in mfd[::-1]:
-            self.state = np.delete(self.state, qbit, 1)
         Normalize(self.state)
 
 
@@ -81,17 +79,6 @@ def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
     if (x < q.size):
         p = cm.polar(q[0,x])[0]**2
     return p
-
-def Measure(q): # Toma una medida del QuBit pasado como parametro
-    r = rnd.random()
-    ms = 0
-    for i in range(0, q.size):
-        p = Prob(q, i)
-        if (r < p):
-            ms = i
-            break
-        r -= p
-    return ms
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
     H = 1 / m.sqrt(2) * np.ones((2,2), dtype=complex)
@@ -155,9 +142,9 @@ def Superposition(x, y): # Devuelve el estado compuesto por los dos QuBits.
 
 def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice que |a|^2 + |b|^2 = 1 para cualquier QuBit. Si no se cumple, modifica el QuBit para que la cumpla si se puede.
     sqs = 0
-    for bs in np.nditer(state):
-        sqs += cm.polar(bs)[0]**2
-    sqs = cm.sqrt(sqs)
+    for i in range(0, state.size):
+        sqs += cm.polar(state[0, i])[0]**2
+    sqs = m.sqrt(sqs)
     if (sqs == 0):
         raise ValueError('Impossible QuBit')
     if (sqs != 1):
@@ -174,9 +161,6 @@ def CNOT(): # Devuelve una compuerta CNOT para dos QuBits
 
 def I(): # Devuelve una compuerta CNOT para dos QuBits
     return np.array([[1,0],[0,1]], dtype=complex)
-
-#def DJOracle(x, y, f): # Implementa el oraculo Uf descrito en el algoritmo de Deutsch-Jozsa, colocando en y el resultado de y XOR f(x)
-#    return (x, ApplyGate(Superposition(y, f(x)), CNOT()))
 
 def Separate(state):
     sol = [state]
