@@ -159,8 +159,11 @@ def CNOT(): # Devuelve una compuerta CNOT para dos QuBits
     cn[3,2] = 1
     return cn
 
-def I(): # Devuelve una compuerta CNOT para dos QuBits
-    return np.array([[1,0],[0,1]], dtype=complex)
+def I(n): # Devuelve la matriz identidad
+    IM = np.array([[1,0],[0,1]], dtype=complex)
+    if n > 1:
+        IM = np.kron(IM, I(n - 1))
+    return IM
 
 def Separate(state):
     sol = [state]
