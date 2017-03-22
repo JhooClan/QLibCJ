@@ -1,7 +1,6 @@
 import math as m
 import cmath as cm
 import numpy as np
-import sympy as sp
 import random as rnd
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
@@ -165,31 +164,6 @@ def I(n): # Devuelve la matriz identidad
         IM = np.kron(IM, I(n - 1))
     return IM
 
-def Separate(state):
-    sol = [state]
-    ukw = sp.symbols('x1, x2')
-    eq = ()
-    ss = state.size
-    if (ss > 2):
-        ukws = int(m.log(ss,2)) * 2 # Numero de incognitas, siempre es entero
-        for i in range(0, ukws - 2): # Creacion de la tupla de incognitas
-            ukw += (sp.symbols('y' + str(i)),)
-        for i in range(2, ukws): # Creacion de la tupla de funciones
-            eq += (ukw[0] * ukw[i] - state[0, i - 2], ukw[1] * ukw[i] - state[0, i - 2 + int(ss/2)],)
-        f = -1
-        for i in range(2, ukws):
-            f += ukw[i]**2
-        eq += (ukw[0]**2 + ukw[1]**2 - 1, f)
-        sols = sp.solvers.solve(eq, ukw)
-        for s in sols:
-            auxa = np.array([s[0], s[1]], dtype=complex)
-            auxa.shape = (1,2)
-            auxb = np.array([s[i] for i in range(2, ukws)], dtype=complex)
-            auxb.shape = (1,auxb.size)
-            if (QEq(Superposition(auxa, auxb), state)):
-                sol = Separate(auxa) + Separate(auxb)
-                break
-    return sol
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
