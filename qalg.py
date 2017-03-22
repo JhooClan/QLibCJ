@@ -30,7 +30,7 @@ def Teleportation(qbit):
         q1 = QOne()
         r.ApplyGate(np.kron(I(2), PauliX()))
     if (m[0] == 1):
-        q0 = QZero()
+        q0 = QOne()
         r.ApplyGate(np.kron(I(2), PauliZ()))
     er = QRegistry([q0, q1, qbit])
     print ("\nExpected result:\n", er.state, "\nResult:\n", r.state)
