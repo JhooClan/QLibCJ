@@ -4,7 +4,7 @@ def DJAlg(size, U_f):
     r.ApplyGate(Hadamard(size))
     r.ApplyGate(U_f)
     r.ApplyGate(np.kron(Hadamard(size - 1), I(1)))
-    return r.Measure([0])
+    return r.Measure([0], False)
 
 def Bal(n):
     b = I(n)
@@ -22,7 +22,7 @@ def Teleportation(qbit):
     r.ApplyGate(np.kron(CNOT(), I(1)))
     r.ApplyGate(np.kron(Hadamard(1), I(2)))
     print ("\nBefore measurement:\n", r.state)
-    m = r.Measure([0,1])
+    m = r.Measure([0,1], False)
     print ("q0 = ", m[0], "\nq1 = ", m[1])
     q0 = QZero()
     q1 = QZero()

@@ -26,7 +26,7 @@ class QRegistry:
             self.state = np.kron(self.state, qbit)
         Normalize(self.state)
 
-    def Measure(self, mask):
+    def Measure(self, mask, remove):
         if (type(mask) != list or \
             not all(type(num) == int for num in mask)):
             raise ValueError('Not valid mask')
@@ -52,13 +52,13 @@ class QRegistry:
             else:
                 me = 1
             measure.append(me)
-            self.Collapse((tq - (qbit + 1)), me)
+            self.Collapse((tq - (qbit + 1)), me, remove)
         return measure
 
     def ApplyGate(self, gate):
         self.state = np.dot(Bra(self.state), gate)
     
-    def Collapse(self, qbit, measure):
+    def Collapse(self, qbit, measure, remove):
         max = 2**qbit
         cnt = 0
         rdy = measure == 1
@@ -69,7 +69,11 @@ class QRegistry:
                 cnt = 0
             if (rdy):
                 self.state[0, i] = 0
+                mfd.append(i)
             cnt += 1
+        if (remove):
+            for qbit in mfd[::-1]:
+                self.state = np.delete(self.state, qbit, 1)
         Normalize(self.state)
 
 
