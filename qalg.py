@@ -1,12 +1,12 @@
 from qlibcj import *
-def DJAlg(size, U_f):
-    r = QRegistry(([QZero() for i in range(0, size - 1)] + [QOne()]))
-    r.ApplyGate(Hadamard(size))
-    r.ApplyGate(U_f)
-    r.ApplyGate(np.kron(Hadamard(size - 1), I(1)))
-    return r.Measure([0], False)
+def DJAlg(size, U_f): # Implementation of Deustch-Josza algorithm
+    r = QRegistry(([QZero() for i in range(0, size - 1)] + [QOne()])) # Initializing registry with size-1 QZero and one QOne
+    r.ApplyGate(Hadamard(size)) # Applying Hadamard to all QuBits
+    r.ApplyGate(U_f) # Applying oracle
+    r.ApplyGate(np.kron(Hadamard(size - 1), I(1))) # Applying Hadamard to all but the last QuBit
+    return r.Measure([0], False) # Measuring the first QuBit
 
-def Bal(n):
+def Bal(n): # Creates an U_f for a balanced f
     b = I(n)
     for i in range(int((2**n)/2), (2**n) - 1, 2):
         t = np.copy(b[i,:])
