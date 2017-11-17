@@ -4,7 +4,7 @@ def DJAlg(size, U_f): # U_f es el oraculo, que debe tener x1..xn e y como qubits
     r.ApplyGate(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
     r.ApplyGate(U_f) # Se aplica el oraculo
     r.ApplyGate(np.kron(Hadamard(size - 1), I(1))) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
-    return r.Measure([0]) # Se mide el qubit x1, si es igual a 1 la funcion es constante. En caso contrario no lo es.
+    return r.Measure([0]) # Se mide el qubit x1, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 
 '''
 Crea un oraculo U_f tal y como viene definido en el algoritmo de Deutsch-Josza para una funcion balanceada f: {0,1}^n ---> {0,1}, f(x) = msb(x) (bit mas significativo de x).
