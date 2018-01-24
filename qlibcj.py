@@ -82,7 +82,8 @@ class QRegistry:
         Normalize(self.state)
     def DensityMatrix(self):
         return np.dot(Ket(self.state), Bra(self.state))
-    def VNEntropy(self):
+    def VNEntropy(self, **kwargs):
+        base = kwargs.get('base', "e")
         #dm = self.DensityMatrix()
         #evalues, m = np.linalg.eig(dm)
         entropy = 0
@@ -92,7 +93,10 @@ class QRegistry:
         for amp in self.state[0]:
             p = cm.polar(amp)[0]**2
             if p > 0:
-                entropy += (p * np.log(p))
+                if base == "e":
+                    entropy += (p * np.log(p))
+                elif type(base) == int or type(base) == float:
+                    entropy += (p * m.log(p, base))
         return -entropy
 
 
