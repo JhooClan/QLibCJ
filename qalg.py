@@ -3,8 +3,8 @@ def DJAlg(size, U_f): # U_f es el oraculo, que debe tener x1..xn e y como qubits
     r = QRegistry(([QZero() for i in range(0, size - 1)] + [QOne()])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
     r.ApplyGate(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
     r.ApplyGate(U_f) # Se aplica el oraculo
-    r.ApplyGate(np.kron(Hadamard(size - 1), I(1))) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
-    return r.Measure([0]) # Se mide el qubit x1, si es igual a 1 la funcion es constante. En caso contrario no lo es.
+    r.ApplyGate(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
+    return r.Measure([0])[0] # Se mide el qubit x1, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 
 '''
 Crea un oraculo U_f tal y como viene definido en el algoritmo de Deutsch-Josza para una funcion balanceada f: {0,1}^n ---> {0,1}, f(x) = msb(x) (bit mas significativo de x).
@@ -22,7 +22,6 @@ def Bal(n):
     return b
 '''
 U_f generada con n = 3:
-
 1 0 0 0 0 0 0 0
 0 1 0 0 0 0 0 0
 0 0 1 0 0 0 0 0
@@ -31,7 +30,6 @@ U_f generada con n = 3:
 0 0 0 0 1 0 0 0
 0 0 0 0 0 0 0 1
 0 0 0 0 0 0 1 0
-
 Las entradas son, empezando por el qubit mas significativo: x1, x2 e y.
 Al aplicar el oraculo lo que hara es intercambiar la probabilidad asociada a |100> con la de |101> y la de |110> con |111>.
 De forma mas general, la funcion Bal se observa que devuelve siempre una puerta que al ser aplicada a un conjunto x1, ..., xn, y
@@ -44,11 +42,11 @@ El oraculo U_f a su vez se comporta como se indica en el algoritmo, teniendo que
 def Teleportation(qbit, *args, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
     r = QRegistry([qbit, QZero(), QZero()], seed=kwargs.get('seed', None)) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
     print ("Original registry:\n", r.state) # Se muestra el estado del registro de qubits.
-    r.ApplyGate(np.kron(I(1), np.kron(Hadamard(1), I(1)))) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.
-    r.ApplyGate(np.kron(I(1), CNOT())) # Se aplica una puerta C-NOT sobre B (control) y A (objetivo).
+    r.ApplyGate(I(1), Hadamard(1), I(1)) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.
+    r.ApplyGate(I(1), CNOT()) # Se aplica una puerta C-NOT sobre B (control) y A (objetivo).
     print ("With Bell+ state:\n", r.state) # Tras la aplicacion de las anteriores dos puertas tenemos un estado de Bell +, B y A estan entrelazados. Se muestra el valor del registro.
-    r.ApplyGate(np.kron(CNOT(), I(1))) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
-    r.ApplyGate(np.kron(Hadamard(1), I(2))) # Se aplica una puerta Hadamard sobre Q.
+    r.ApplyGate(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
+    r.ApplyGate(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
     print ("\nBefore measurement:\n", r.state) # Se muestra el valor del registro antes de la medida.
     m = r.Measure([0,1]) # Se miden los qubits Q y B.
     print ("q0 = ", m[0], "\nq1 = ", m[1]) # Se muestra el resultado de la medida
@@ -56,10 +54,10 @@ def Teleportation(qbit, *args, **kwargs): # El qubit que va a ser teleportado. A
     q1 = QZero() # Usandolos crearemos un registro con los valores que debe tener si la teleportacion se ha realizado con exito.
     if (m[1] == 1):
         q1 = QOne()
-        r.ApplyGate(np.kron(I(2), PauliX())) # Si al medir B obtuvimos un 1, rotamos A en el eje X (Pauli-X o NOT)
+        r.ApplyGate(I(2), PauliX()) # Si al medir B obtuvimos un 1, rotamos A en el eje X (Pauli-X o NOT)
     if (m[0] == 1):
         q0 = QOne()
-        r.ApplyGate(np.kron(I(2), PauliZ())) # Si al medir Q obtuvimos un 1, rotamos A en el eje Z (Pauli-Z).
+        r.ApplyGate(I(2), PauliZ()) # Si al medir Q obtuvimos un 1, rotamos A en el eje Z (Pauli-Z).
     er = QRegistry([q0, q1, qbit]) # Se crea el registro para testeo mencionado anteriormente.
     print ("\nExpected result:\n", er.state, "\nResult:\n", r.state) # Se muestra el contenido de los registros, tanto el del resultado esperado como el obtenido.
     return r # Se devuelve el registro obtenido tras aplicar el algoritmo.

@@ -9,7 +9,7 @@ import random as rnd
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
 class QRegistry:
-    def __init__(self, qbits, *args, **kwargs):    # QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
+    def __init__(self, qbits, **kwargs):    # QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
         if (type(qbits) != list or \
             not qbits or \
             not all(type(qbit) == np.ndarray and \
@@ -25,7 +25,8 @@ class QRegistry:
             Normalize(qbit)
             self.state = np.kron(self.state, qbit)
         Normalize(self.state)
-        rnd.seed(kwargs.get('seed', None))
+        if (kwargs.get('seed', None) != None):
+            rnd.seed(kwargs['seed'])
 
     def Measure(self, mask, remove = False): # List of numbers with the QuBits that should be measured, numerated as q0..qn. If you want to measure q2 and q4, the imput will be [2,4]. remove = True if you want to remove a QuBit from the registry after measuring
         if (type(mask) != list or \
@@ -56,7 +57,10 @@ class QRegistry:
             self.Collapse((tq - (qbit + 1)), me, remove)
         return measure
 
-    def ApplyGate(self, gate): # Applies a quantum gate to the registry.
+    def ApplyGate(self, *gates): # Applies a quantum gate to the registry.
+        gate = gates[0]
+        for i in range(1, len(gates)):
+            gate = np.kron(gate, gates[i])
         self.state = np.dot(Bra(self.state), gate)
     
     def Collapse(self, qbit, measure, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. measure is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
