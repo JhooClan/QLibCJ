@@ -173,6 +173,20 @@ def I(n): # Devuelve la matriz identidad
         IM = np.kron(IM, I(n - 1))
     return IM
 
+def hopfCoords(qbit):
+    alpha = qbit[0][0]
+    beta = qbit[0][1]
+    theta = np.arccos(alpha) * 2
+    print (theta)
+    s = np.sin(theta/2)
+    if (s != 0):
+        phi = np.log(beta/np.sin(theta/2)) / 1j
+    else:
+        phi = 0j
+
+    return (theta, phi)
+
+
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
