@@ -39,7 +39,7 @@ y para la otra mitad 1, la funcion f es balanceada ya que devuelve 0 para la mit
 El oraculo U_f a su vez se comporta como se indica en el algoritmo, teniendo que y <- f(x) XOR y.
 '''
 
-def Teleportation(qbit, *args, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
+def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
     r = QRegistry([qbit, QZero(), QZero()], seed=kwargs.get('seed', None)) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
     print ("Original registry:\n", r.state) # Se muestra el estado del registro de qubits.
     r.ApplyGate(I(1), Hadamard(1), I(1)) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.

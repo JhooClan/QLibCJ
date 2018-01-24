@@ -80,6 +80,20 @@ class QRegistry:
             for qbit in mfd[::-1]:
                 self.state = np.delete(self.state, qbit, 1)
         Normalize(self.state)
+    def DensityMatrix(self):
+        return np.dot(Ket(self.state), Bra(self.state))
+    def VNEntropy(self):
+        #dm = self.DensityMatrix()
+        #evalues, m = np.linalg.eig(dm)
+        entropy = 0
+        #for e in evalues:
+        #    if e != 0:
+        #        entropy += e * np.log(e)
+        for amp in self.state[0]:
+            p = cm.polar(amp)[0]**2
+            if p > 0:
+                entropy += (p * np.log(p))
+        return -entropy
 
 
 def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
@@ -172,20 +186,6 @@ def I(n): # Devuelve la matriz identidad
     if n > 1:
         IM = np.kron(IM, I(n - 1))
     return IM
-
-def hopfCoords(qbit):
-    alpha = qbit[0][0]
-    beta = qbit[0][1]
-    theta = np.arccos(alpha) * 2
-    print (theta)
-    s = np.sin(theta/2)
-    if (s != 0):
-        phi = np.log(beta/np.sin(theta/2)) / 1j
-    else:
-        phi = 0j
-
-    return (theta, phi)
-
 
 
 def QEq(q1, q2):
