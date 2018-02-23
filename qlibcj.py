@@ -102,6 +102,9 @@ class QRegistry:
                     entropy += (p * m.log(p, base))
         return -entropy
 
+def UnitaryMatrix(mat, decimals=10):
+    mustbei = np.around(np.dot(mat, Dagger(mat)), decimals=decimals)
+    return (mustbei == I(int(np.log2(mustbei.shape[0])))).all()
 
 def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
     p = 0
@@ -275,6 +278,22 @@ def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
     gate = np.kron(I(2), PauliX())
     gate = np.dot(gate, Peres())
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    return gate
+
+def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
+    # Implementation of TR gate with smaller gates.
+    gate = np.kron(I(1), np.kron(PauliX(), I(1)))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), np.kron(PauliX(), I(1))))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     return gate
 
 def hopfCoords(qbit):
