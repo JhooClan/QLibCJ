@@ -177,19 +177,63 @@ def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice 
         for bs in state:
             bs /= sqs
 
-def CNOT(): # Devuelve una compuerta CNOT para dos QuBits
-    cn = np.zeros((4,4), dtype=complex)
-    cn[0,0] = 1
-    cn[1,1] = 1
-    cn[2,3] = 1
-    cn[3,2] = 1
-    return cn
+def SWAP(): # SWAP gate for 2 qubits
+    sw = np.zeros((4,4), dtype=complex)
+    sw[0,0] = 1
+    sw[1,2] = 1
+    sw[2,1] = 1
+    sw[3,3] = 1
+    return sw
+
+def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
+    sw = np.zeros((4,4), dtype=complex)
+    sw[0,0] = 1
+    sw[1,1] = 0.5 * (1+1j)
+    sw[1,2] = 0.5 * (1-1j)
+    sw[2,1] = 0.5 * (1-1j)
+    sw[2,2] = 0.5 * (1+1j)
+    sw[3,3] = 1
+    return sw
+
+def SqrtNOT(): # Square root of NOT gate
+    sn = np.array([1+1j, 1-1j, 1-1j, 1+1j], dtype=complex)
+    sn.shape = (2,2)
+    return sn * 0.5
+
+def ControlledU(gate): # Returns a controlled version of the given gate
+    gdim = gate.shape[0]
+    cu = np.eye(gdim*2, dtype=complex)
+    cu[gdim:,gdim:] = gate
+    return cu
+
+def CNOT(): # Returns a CNOT gate for two QuBits
+    return ControlledU(PauliX())
+
+def Toffoli(): # Returns a CCNOT gate for three QuBits
+    return ControlledU(CNOT())
+
+def Fredkin(): # Returns a CSWAP gate for three QuBits
+    return ControlledU(SWAP())
 
 def I(n): # Devuelve la matriz identidad
     IM = np.array([[1,0],[0,1]], dtype=complex)
     if n > 1:
         IM = np.kron(IM, I(n - 1))
     return IM
+
+def Transpose(gate): # Returns the Transpose of the given matrix
+    return np.matrix.transpose(gate)
+
+def Dagger(gate): # Returns the Hermitian Conjugate or Conjugate Transpose of the given matrix
+    return np.matrix.getH(gate)
+
+def Invert(gate): # Returns the inverse of the given matrix
+    return np.linalg.inv(gate)
+
+def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians), NOT WORKING YET!
+    ps = np.array([1, 0, 0, np.exp(1j * angle)], dtype=complex)
+    ps.shape = (2,2)
+    return ps
 
 def hopfCoords(qbit):
     alpha = qbit[0][0]
