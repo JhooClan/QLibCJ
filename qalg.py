@@ -1,6 +1,6 @@
 from qlibcj import *
 def DJAlg(size, U_f): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
-    r = QRegistry(([QZero() for i in range(0, size - 1)] + [QOne()])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
+    r = QRegistry(([0 for i in range(0, size - 1)] + [1])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
     r.ApplyGate(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
     r.ApplyGate(U_f) # Se aplica el oraculo
     r.ApplyGate(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
@@ -40,7 +40,7 @@ El oraculo U_f a su vez se comporta como se indica en el algoritmo, teniendo que
 '''
 
 def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
-    r = QRegistry([qbit, QZero(), QZero()], seed=kwargs.get('seed', None)) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
+    r = QRegistry([qbit, 0, 0], seed=kwargs.get('seed', None)) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
     print ("Original registry:\n", r.state) # Se muestra el estado del registro de qubits.
     r.ApplyGate(I(1), Hadamard(1), I(1)) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.
     r.ApplyGate(I(1), CNOT()) # Se aplica una puerta C-NOT sobre B (control) y A (objetivo).

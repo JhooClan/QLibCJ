@@ -12,11 +12,14 @@ class QRegistry:
     def __init__(self, qbits, **kwargs):    # QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
         if (type(qbits) != list or \
             not qbits or \
-            not all(type(qbit) == np.ndarray and \
-                    qbit.shape == (1,2) and \
-                    qbit.dtype == 'complex128' for qbit in qbits)):
+            #not all(type(qbit) == np.ndarray and \
+            #        qbit.shape == (1,2) and \
+            #        qbit.dtype == 'complex128' for qbit in qbits)):
+            not all(type(qbit) == type(0) and \
+                    (qbit == 0 or qbit == 1) for qbit in qbits)):
             raise ValueError('Impossible QuBit Registry')
-        qbs = qbits[:]
+        #qbs = qbits[:]
+        qbs = [QOne() if i else QZero() for i in qbits]
 
         self.state = qbs[0]
         Normalize(self.state)
