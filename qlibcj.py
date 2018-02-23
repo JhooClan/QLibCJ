@@ -144,6 +144,14 @@ def PauliZ():
     pz.shape = (2,2)
     return pz
 
+def V(): # V gate, usually seen in its controlled form C-V. Its hermitian also can be seen as V+.
+#    v = np.array([1,0,0,1j], dtype=complex)
+#    v.shape = (2,2)
+#    return v
+    v = np.array([1, -1j, -1j, 1], dtype=complex)
+    v.shape = (2,2)
+    return v * ((1 + 1j)/2)
+
 def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
     b = v[:]
     s = v.shape
@@ -195,10 +203,12 @@ def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
     sw[3,3] = 1
     return sw
 
-def SqrtNOT(): # Square root of NOT gate
+'''
+def SqrtNOT(): # Square root of NOT gate, also called V gate
     sn = np.array([1+1j, 1-1j, 1-1j, 1+1j], dtype=complex)
     sn.shape = (2,2)
     return sn * 0.5
+'''
 
 def ControlledU(gate): # Returns a controlled version of the given gate
     gdim = gate.shape[0]
@@ -209,7 +219,18 @@ def ControlledU(gate): # Returns a controlled version of the given gate
 def CNOT(): # Returns a CNOT gate for two QuBits
     return ControlledU(PauliX())
 
-def Toffoli(): # Returns a CCNOT gate for three QuBits
+def Toffoli(): # Returns a CCNOT gate for three QuBits#Implementation not working.
+    ''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-V and Controlled-V+
+    gate = np.kron(SWAP(), I(1))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    '''
     return ControlledU(CNOT())
 
 def Fredkin(): # Returns a CSWAP gate for three QuBits
@@ -234,6 +255,18 @@ def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angl
     ps = np.array([1, 0, 0, np.exp(1j * angle)], dtype=complex)
     ps.shape = (2,2)
     return ps
+
+def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C
+    ''' # Implementation of Peres gate, NOT WORKING
+    gate = np.kron(SWAP(), I(1))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    return gate
+    '''
+    return np.dot(Toffoli(), np.kron(CNOT(), I(1)))
 
 def hopfCoords(qbit):
     alpha = qbit[0][0]
