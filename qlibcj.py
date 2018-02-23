@@ -222,7 +222,7 @@ def ControlledU(gate): # Returns a controlled version of the given gate
 def CNOT(): # Returns a CNOT gate for two QuBits
     return ControlledU(PauliX())
 
-def Toffoli(): # Returns a CCNOT gate for three QuBits#Implementation not working.
+def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
     ''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-V and Controlled-V+
     gate = np.kron(SWAP(), I(1))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
@@ -239,7 +239,7 @@ def Toffoli(): # Returns a CCNOT gate for three QuBits#Implementation not workin
 def Fredkin(): # Returns a CSWAP gate for three QuBits
     return ControlledU(SWAP())
 
-def I(n): # Devuelve la matriz identidad
+def I(n): # Returns Identity Matrix of specified size
     IM = np.array([[1,0],[0,1]], dtype=complex)
     if n > 1:
         IM = np.kron(IM, I(n - 1))
@@ -259,8 +259,8 @@ def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angl
     ps.shape = (2,2)
     return ps
 
-def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C
-    ''' # Implementation of Peres gate, NOT WORKING
+def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
+    ''' # Implementation of Peres gate with smaller gates, NOT WORKING
     gate = np.kron(SWAP(), I(1))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
@@ -270,6 +270,12 @@ def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C
     return gate
     '''
     return np.dot(Toffoli(), np.kron(CNOT(), I(1)))
+
+def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
+    gate = np.kron(I(2), PauliX())
+    gate = np.dot(gate, Peres())
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    return gate
 
 def hopfCoords(qbit):
     alpha = qbit[0][0]
@@ -282,6 +288,17 @@ def hopfCoords(qbit):
     else:
         phi = 0j
     return (theta, phi)
+
+def getTruthTable(gate):
+    num = int(np.log2(gate.shape[0]))
+    for i in range(0, gate.shape[0]):
+        nbin = [int(x) for x in bin(i)[2:]]
+        qinit = [0 for j in range(num - len(nbin))]
+        qinit += nbin
+        qr = QRegistry(qinit)
+        qr.ApplyGate(gate)
+        mes = qr.Measure([j for j in range(num)])
+        print(str(qinit) + " -> " + str(mes))
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
