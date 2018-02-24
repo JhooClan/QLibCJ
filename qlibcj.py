@@ -295,15 +295,11 @@ def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
     gate = np.kron(I(1), np.kron(PauliX(), I(1)))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), np.kron(PauliX(), I(1))))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     return gate
 
 def hopfCoords(qbit):
