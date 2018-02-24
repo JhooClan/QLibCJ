@@ -227,6 +227,7 @@ def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
     ''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-V and Controlled-V+
+    # Gates needed (without control SWAPs): 5
     gate = np.kron(I(1), ControlledU(V()))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
@@ -263,6 +264,7 @@ def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angl
 
 def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
     ''' # Implementation of Peres gate with smaller gates.
+    # Gates needed (without control SWAPs): 4
     gate = np.kron(SWAP(), I(1))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
@@ -280,6 +282,7 @@ def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     '''
     # Optimized implementation with smaller gates
+    # Gates needed (without control SWAPs): 6
     gate = np.kron(SWAP(), PauliX())
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
@@ -291,6 +294,7 @@ def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
 
 def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
     # Implementation of TR gate with smaller gates.
+    # Gates needed (without control SWAPs): 6
     gate = np.kron(I(1), np.kron(PauliX(), I(1)))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
@@ -303,6 +307,7 @@ def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
 
 def URG(): # A, B, C -> P = (A+B) XOR C, Q = B, R = AB XOR C.
     # Implementation of URG gate with smaller gates.
+    # Gates needed (without control SWAPs): 8
     gate = np.kron(I(1), ControlledU(V()))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
@@ -319,6 +324,7 @@ def URG(): # A, B, C -> P = (A+B) XOR C, Q = B, R = AB XOR C.
 
 def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
     # Implementation of TR gate with smaller gates.
+    # Gates needed (without control SWAPs): 5
     gate = np.kron(SWAP(), I(1))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
