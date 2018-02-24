@@ -263,13 +263,13 @@ def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angl
     return ps
 
 def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
-    ''' # Implementation of Peres gate with smaller gates, NOT WORKING
+    ''' # Implementation of Peres gate with smaller gates.
     gate = np.kron(SWAP(), I(1))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
     return gate
     '''
     return np.dot(Toffoli(), np.kron(CNOT(), I(1)))
