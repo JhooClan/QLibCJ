@@ -346,16 +346,26 @@ def hopfCoords(qbit):
         phi = 0j
     return (theta, phi)
 
-def getTruthTable(gate):
+def getTruthTable(gate, ancilla=None, garbage=0): # Prints the truth table of the given gate.
+    # You can set the ancilla bits to not include them in the table, with the list of values they must have.
+    # For example, if you have two 0s and one 1 as ancilla bits, ancilla[0,0,1]. It always takes the last bits as the ancilla ones!
+    # The garbage=n removes the last n bits from the truth table, considering them garbage.
+    # For example, if you have 6 outputs and the last 4 outputs are garbage, only the value of the first two would be printed.
+    # Always removes the last n bits!
     num = int(np.log2(gate.shape[0]))
     for i in range(0, gate.shape[0]):
         nbin = [int(x) for x in bin(i)[2:]]
         qinit = [0 for j in range(num - len(nbin))]
         qinit += nbin
-        qr = QRegistry(qinit)
-        qr.ApplyGate(gate)
-        mes = qr.Measure([j for j in range(num)])
-        print(str(qinit) + " -> " + str(mes))
+        if ancilla == None or qinit[-len(ancilla):] == ancilla:
+            qr = QRegistry(qinit)
+            qr.ApplyGate(gate)
+            mes = qr.Measure([j for j in range(num-garbage)])
+            if ancilla != None:
+                ini = qinit[:-len(ancilla)]
+            else:
+                ini = qinit
+            print(str(ini) + " -> " + str(mes))
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
@@ -366,3 +376,15 @@ def HalfSubstractor(): # A, B, 0 -> P = A-B, Q = Borrow, R = B = Garbage
     hs = np.dot(hs, np.kron(SWAP(), I(1)))
     hs = np.dot(hs, np.kron(I(1), SWAP()))
     return hs
+
+def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage, S = B1B2 = Garbage, T = Bin = Garbage, U = B = Garbage
+    fs = np.kron(I(2), np.kron(SWAP(), I(2)))
+    fs = np.dot(fs, np.kron(HalfSubstractor(), I(3)))
+    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), I(2))))
+    fs = np.dot(fs, np.kron(I(1), np.kron(SWAP(), np.kron(SWAP(), I(1)))))
+    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), SWAP())))
+    fs = np.dot(fs, np.kron(HalfSubstractor(), I(3)))
+    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), I(2))))
+    fs = np.dot(fs, np.kron(I(3), np.kron(SWAP(), I(1))))
+    fs = np.dot(fs, np.kron(I(1), np.kron(URG(), I(2))))
+    return fs
