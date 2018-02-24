@@ -62,24 +62,21 @@ def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque e
     print ("\nExpected result:\n", er.state, "\nResult:\n", r.state) # Se muestra el contenido de los registros, tanto el del resultado esperado como el obtenido.
     return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
-def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]. NO FUNCIONA TODAVIA
+def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]
     r = QRegistry(nums + [0,0,0,0,0,0,0], seed=kwargs.get('seed', None)) # 7 bits de ancilla a 0 son necesarios en esta implementacion
     r.ApplyGate(I(1), SWAP(), SWAP(), I(6))
     r.ApplyGate(I(2), SWAP(), SWAP(), I(5))
     r.ApplyGate(I(3), SWAP(), SWAP(), I(4))
-    r.ApplyGate(I(4), SWAP(), SWAP(), I(3))
-    r.ApplyGate(I(5), SWAP(), I(4))
-    r.ApplyGate(Substractor(), I(5))
-    r.ApplyGate(I(1), SWAP(), I(8))
-    r.ApplyGate(I(2), SWAP(), I(7))
-    r.ApplyGate(I(3), SWAP(), I(6))
     r.ApplyGate(I(4), SWAP(), I(5))
-    r.ApplyGate(I(5), SWAP(), I(4))
-    r.ApplyGate(I(6), SWAP(), I(3))
     r.ApplyGate(I(5), Substractor())
+    r.ApplyGate(I(5), SWAP(), I(4))
     r.ApplyGate(I(4), SWAP(), I(5))
-    r.ApplyGate(I(3), SWAP(), SWAP(), I(4))
-    r.ApplyGate(I(2), SWAP(), SWAP(), I(5))
-    r.ApplyGate(I(1), SWAP(), SWAP(), I(6))
+    r.ApplyGate(I(3), SWAP(), I(6))
     r.ApplyGate(I(2), SWAP(), I(7))
+    r.ApplyGate(Substractor(), I(5))
+    r.ApplyGate(I(5), SWAP(), I(4))
+    r.ApplyGate(I(4), SWAP(), I(5))
+    r.ApplyGate(I(3), SWAP(), I(6))
+    r.ApplyGate(I(2), SWAP(), I(7))
+    r.ApplyGate(I(1), SWAP(), I(8))
     return r.Measure([0, 1, 2])[0:3]
