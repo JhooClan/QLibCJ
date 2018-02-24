@@ -222,7 +222,7 @@ def ControlledU(gate): # Returns a controlled version of the given gate
     cu[gdim:,gdim:] = gate
     return cu
 
-def CNOT(): # Returns a CNOT gate for two QuBits
+def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
     return ControlledU(PauliX())
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
@@ -299,6 +299,33 @@ def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
     gate = np.dot(gate, np.kron(CNOT(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
     gate = np.dot(gate, np.kron(I(1), np.kron(PauliX(), I(1))))
+    return gate
+
+def URG(): # A, B, C -> P = (A+B) XOR C, Q = B, R = AB XOR C.
+    # Implementation of URG gate with smaller gates.
+    gate = np.kron(I(1), ControlledU(V()))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), SWAP()))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), CNOT()))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), SWAP()))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    return gate
+
+def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
+    # Implementation of TR gate with smaller gates.
+    gate = np.kron(SWAP(), I(1))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
     return gate
 
 def hopfCoords(qbit):
