@@ -359,3 +359,10 @@ def getTruthTable(gate):
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
+
+def HalfSubstractor(): # A, B, 0 -> P = A-B, Q = Borrow, R = B = Garbage
+    hs = np.kron(SWAP(), I(1))
+    hs = np.dot(hs, TR())
+    hs = np.dot(hs, np.kron(SWAP(), I(1)))
+    hs = np.dot(hs, np.kron(I(1), SWAP()))
+    return hs
