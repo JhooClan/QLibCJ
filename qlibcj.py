@@ -227,15 +227,14 @@ def CNOT(): # Returns a CNOT gate for two QuBits
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
     ''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-V and Controlled-V+
-    gate = np.kron(SWAP(), I(1))
+    gate = np.kron(I(1), ControlledU(V()))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
     gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
     gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
     gate = np.dot(gate, np.kron(CNOT(), I(1)))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    return gate
     '''
     return ControlledU(CNOT())
 
