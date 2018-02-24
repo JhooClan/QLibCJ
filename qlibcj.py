@@ -275,8 +275,18 @@ def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
     return np.dot(Toffoli(), np.kron(CNOT(), I(1)))
 
 def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
+    ''' Old implementation using Peres gate.
     gate = np.kron(I(2), PauliX())
     gate = np.dot(gate, Peres())
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    '''
+    # Optimized implementation with smaller gates
+    gate = np.kron(SWAP(), PauliX())
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(SWAP(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+    gate = np.dot(gate, np.kron(CNOT(), I(1)))
+    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
     gate = np.dot(gate, np.kron(SWAP(), I(1)))
     return gate
 
