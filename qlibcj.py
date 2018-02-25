@@ -257,8 +257,47 @@ def Dagger(gate): # Returns the Hermitian Conjugate or Conjugate Transpose of th
 def Invert(gate): # Returns the inverse of the given matrix
     return np.linalg.inv(gate)
 
-def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians), NOT WORKING YET!
-    ps = np.array([1, 0, 0, np.exp(1j * angle)], dtype=complex)
+def getSC(number):
+    return len(str(number).replace('.', ''))
+
+def setSC(number, sc):
+    res = 0
+    num = str(number).split('.')
+    i = len(num[0])
+    d = 0
+    if i >= sc:
+        diff = i - sc
+        res = int(num[0][0:sc]+"0"*diff)
+    elif len(num) == 2:
+        d = len(num[1])
+        tsc = min(sc - i, d)
+        diff = 0
+        if sc - i > d:
+            diff = sc - i - d
+        res = float(num[0] + '.' + num[1][0:tsc]+"0"*diff)
+        if d > tsc and num[1][tsc] >= '5':
+            res += 10**-tsc
+    return res
+
+def toComp(angle, sc=None): # Returns a complex number with module 1 and the specified phase. Improved precision with k*pi/2, with k integer
+    while angle >= 2*np.pi:
+        angle -= 2*np.pi
+    if sc == None:
+        sc = getSC(angle)
+    res = np.around(m.cos(angle), decimals=sc-1) + np.around(m.sin(angle), decimals=sc-1)*1j
+    aux = 2 * angle
+    if aux == 0:
+        res = 1+0j
+    elif aux == 1*np.pi:
+        res = 1j
+    elif aux == 2*np.pi:
+        res = -1+0j
+    elif aux == 3*np.pi:
+        res = -1j
+    return res
+
+def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians)
+    ps = np.array([1, 0, 0, toComp(angle)], dtype=complex)
     ps.shape = (2,2)
     return ps
 
@@ -378,6 +417,7 @@ def HalfSubstractor(): # A, B, 0 -> P = A-B, Q = Borrow, R = B = Garbage
     return hs
 
 def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage, S = B1B2 = Garbage, T = Bin = Garbage, U = B = Garbage
+    # Can be used as a comparator. Q will be 0 if A>=B, 1 otherwise.
     fs = np.kron(I(2), np.kron(SWAP(), I(2)))
     fs = np.dot(fs, np.kron(HalfSubstractor(), I(3)))
     fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), I(2))))
