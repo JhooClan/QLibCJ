@@ -252,6 +252,16 @@ def I(n): # Returns Identity Matrix for the specified number of QuBits
     #    IM = np.kron(IM, I(n - 1))
     return np.eye(2**n, dtype=complex)
 
+def Deutsch(angle): # Returns Deutsh gate with specified angle. D(pi/2) = Toffoli
+    d = np.eye(8, dtype=complex)
+    can = np.cos(angle)
+    san = np.sin(angle)
+    d[6,6] = can * 1j
+    d[6,7] = san
+    d[7,6] = san
+    d[7,7] = can * 1j
+    return d
+
 def Transpose(gate): # Returns the Transpose of the given matrix
     return np.matrix.transpose(gate)
 
@@ -283,21 +293,12 @@ def setSC(number, sc):
             res += 10**-tsc
     return res
 
-def toComp(angle, sc=None): # Returns a complex number with module 1 and the specified phase. Improved precision with k*pi/2, with k integer
+def toComp(angle, sc=None): # Returns a complex number with module 1 and the specified phase.
     while angle >= 2*np.pi:
         angle -= 2*np.pi
     if sc == None:
         sc = getSC(angle)
     res = np.around(m.cos(angle), decimals=sc-1) + np.around(m.sin(angle), decimals=sc-1)*1j
-    aux = 2 * angle
-    if aux == 0:
-        res = 1+0j
-    elif aux == 1*np.pi:
-        res = 1j
-    elif aux == 2*np.pi:
-        res = -1+0j
-    elif aux == 3*np.pi:
-        res = -1j
     return res
 
 def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians)
