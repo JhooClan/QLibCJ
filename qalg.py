@@ -1,6 +1,6 @@
 from qlibcj import *
 def DJAlg(size, U_f, **kwargs): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
-    np.random.seed = kwargs.get('seed', None) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
+    rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
     r = QRegistry(([0 for i in range(size - 1)] + [1])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
     r.ApplyGate(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
     r.ApplyGate(U_f) # Se aplica el oraculo
@@ -41,7 +41,7 @@ El oraculo U_f a su vez se comporta como se indica en el algoritmo, teniendo que
 '''
 
 def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
-    np.random.seed = kwargs.get('seed', None) # Se fija la semilla antes de comenzar el experimento. En este caso la tomamos por parametro.
+    rnd.seed(kwargs.get('seed', None)) # Se fija la semilla antes de comenzar el experimento. En este caso la tomamos por parametro.
     r = QRegistry([qbit, 0, 0]) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
     print ("Original registry:\n", r.state) # Se muestra el estado del registro de qubits.
     r.ApplyGate(I(1), Hadamard(1), I(1)) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.
@@ -73,7 +73,7 @@ def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque e
     return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
 def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]
-    np.random.seed = kwargs.get('seed', None) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
+    rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
     r = QRegistry(nums + [0,0,0,0,0,0,0]) # 7 bits de ancilla a 0 son necesarios en esta implementacion
     r.ApplyGate(I(1), SWAP(), SWAP(), I(6))
     r.ApplyGate(I(2), SWAP(), SWAP(), I(5))

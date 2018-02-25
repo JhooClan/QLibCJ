@@ -1,7 +1,7 @@
 import math as m
 import cmath as cm
 import numpy as np
-#import random as rnd
+import random as rnd
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
 # La multiplicacion por un escalar se hace con *. n * A
@@ -44,8 +44,7 @@ class QRegistry:
             raise ValueError('Out of range')
         measure = []
         for qbit in mask:
-            #r = rnd.random()
-            r = np.random.uniform()
+            r = rnd.random()
             p = 0
             max = 2**(tq - (qbit + 1))
             cnt = 0
@@ -247,11 +246,11 @@ def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B,
 def Fredkin(): # Returns a CSWAP gate for three QuBits
     return ControlledU(SWAP())
 
-def I(n): # Returns Identity Matrix of specified size
-    IM = np.array([[1,0],[0,1]], dtype=complex)
-    if n > 1:
-        IM = np.kron(IM, I(n - 1))
-    return IM
+def I(n): # Returns Identity Matrix for the specified number of QuBits
+    #IM = np.array([[1,0],[0,1]], dtype=complex)
+    #if n > 1:
+    #    IM = np.kron(IM, I(n - 1))
+    return np.eye(2**n, dtype=complex)
 
 def Transpose(gate): # Returns the Transpose of the given matrix
     return np.matrix.transpose(gate)
