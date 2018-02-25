@@ -1,10 +1,11 @@
 from qlibcj import *
-def DJAlg(size, U_f): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
-    r = QRegistry(([0 for i in range(0, size - 1)] + [1])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
+def DJAlg(size, U_f, **kwargs): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
+    np.random.seed = kwargs.get('seed', None) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
+    r = QRegistry(([0 for i in range(size - 1)] + [1])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
     r.ApplyGate(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
     r.ApplyGate(U_f) # Se aplica el oraculo
     r.ApplyGate(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
-    return r.Measure([0])[0] # Se mide el qubit x1, si es igual a 0 la funcion es constante. En caso contrario no lo es.
+    return r.Measure([1 for i in range(size - 1)] + [0]) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 
 '''
 Crea un oraculo U_f tal y como viene definido en el algoritmo de Deutsch-Josza para una funcion balanceada f: {0,1}^n ---> {0,1}, f(x) = msb(x) (bit mas significativo de x).
@@ -40,30 +41,40 @@ El oraculo U_f a su vez se comporta como se indica en el algoritmo, teniendo que
 '''
 
 def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
-    r = QRegistry([qbit, 0, 0], seed=kwargs.get('seed', None)) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
+    np.random.seed = kwargs.get('seed', None) # Se fija la semilla antes de comenzar el experimento. En este caso la tomamos por parametro.
+    r = QRegistry([qbit, 0, 0]) # Se crea un registro con el qubit que debe ser enviado a Alice, el qubit de Bob y el de Alice, en adelante Q, B y A. B y A estan inicializados a |0>.
     print ("Original registry:\n", r.state) # Se muestra el estado del registro de qubits.
     r.ApplyGate(I(1), Hadamard(1), I(1)) # Se aplica la puerta Hadamard a B, ahora en una superposicion de los estados |0> y |1>, ambos exactamente con la misma probabilidad.
     r.ApplyGate(I(1), CNOT()) # Se aplica una puerta C-NOT sobre B (control) y A (objetivo).
     print ("With Bell+ state:\n", r.state) # Tras la aplicacion de las anteriores dos puertas tenemos un estado de Bell +, B y A estan entrelazados. Se muestra el valor del registro.
+    # Aqui es donde trabajamos con el qubit Q que queremos enviar posteriormente. En este caso de ejemplo le vamos a aplicar Hadamard y despues un cambio de fase de pi/2
+    r.ApplyGate(Hadamard(1), I(2))
+    r.ApplyGate(PhaseShift(np.pi/2), I(2))
+    # Una vez terminado todo lo que queremos hacerle al QuBit, procedemos a preparar el envio
     r.ApplyGate(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
     r.ApplyGate(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
     print ("\nBefore measurement:\n", r.state) # Se muestra el valor del registro antes de la medida.
-    m = r.Measure([0,1]) # Se miden los qubits Q y B.
+    m = r.Measure([1,1,0]) # Se miden los qubits Q y B.
     print ("q0 = ", m[0], "\nq1 = ", m[1]) # Se muestra el resultado de la medida
-    q0 = QZero() # Se crean para ver que la teleportacion se realiza con exito dos qubits, q0 y q1.
-    q1 = QZero() # Usandolos crearemos un registro con los valores que debe tener si la teleportacion se ha realizado con exito.
+    q0 = 0 # Se crean para ver que la teleportacion se realiza con exito dos qubits, q0 y q1.
+    q1 = 0 # Usandolos crearemos un registro con los valores que debe tener si la teleportacion se ha realizado con exito.
     if (m[1] == 1):
-        q1 = QOne()
+        q1 = 1
         r.ApplyGate(I(2), PauliX()) # Si al medir B obtuvimos un 1, rotamos A en el eje X (Pauli-X o NOT)
     if (m[0] == 1):
-        q0 = QOne()
+        q0 = 1
         r.ApplyGate(I(2), PauliZ()) # Si al medir Q obtuvimos un 1, rotamos A en el eje Z (Pauli-Z).
     er = QRegistry([q0, q1, qbit]) # Se crea el registro para testeo mencionado anteriormente.
+    # Y aplicamos las mismas operaciones para ver que es lo que se debe recibir, en este caso Hadamard y PhaseShift.
+    er.ApplyGate(I(2), Hadamard(1))
+    er.ApplyGate(I(2), PhaseShift(np.pi/2))
     print ("\nExpected result:\n", er.state, "\nResult:\n", r.state) # Se muestra el contenido de los registros, tanto el del resultado esperado como el obtenido.
+    print ("Assert: " + str(r.state == er.state))
     return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
 def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]
-    r = QRegistry(nums + [0,0,0,0,0,0,0], seed=kwargs.get('seed', None)) # 7 bits de ancilla a 0 son necesarios en esta implementacion
+    np.random.seed = kwargs.get('seed', None) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
+    r = QRegistry(nums + [0,0,0,0,0,0,0]) # 7 bits de ancilla a 0 son necesarios en esta implementacion
     r.ApplyGate(I(1), SWAP(), SWAP(), I(6))
     r.ApplyGate(I(2), SWAP(), SWAP(), I(5))
     r.ApplyGate(I(3), SWAP(), SWAP(), I(4))
@@ -79,4 +90,4 @@ def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros 
     r.ApplyGate(I(3), SWAP(), I(6))
     r.ApplyGate(I(2), SWAP(), I(7))
     r.ApplyGate(I(1), SWAP(), I(8))
-    return r.Measure([0, 1, 2])[0:3]
+    return r.Measure([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])

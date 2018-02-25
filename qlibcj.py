@@ -1,7 +1,7 @@
 import math as m
 import cmath as cm
 import numpy as np
-import random as rnd
+#import random as rnd
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
 # La multiplicacion por un escalar se hace con *. n * A
@@ -28,19 +28,24 @@ class QRegistry:
             Normalize(qbit)
             self.state = np.kron(self.state, qbit)
         Normalize(self.state)
-        if (kwargs.get('seed', None) != None):
-            rnd.seed(kwargs['seed'])
+        #if (kwargs.get('seed', None) != None):
+        #    rnd.seed(kwargs['seed'])
 
-    def Measure(self, mask, remove = False): # List of numbers with the QuBits that should be measured, numerated as q0..qn. If you want to measure q2 and q4, the imput will be [2,4]. remove = True if you want to remove a QuBit from the registry after measuring
-        if (type(mask) != list or \
-            not all(type(num) == int for num in mask)):
+    def Measure(self, msk, remove = False): # List of numbers with the QuBits that should be measured. 0 means not measuring that qubit, 1 otherwise. remove = True if you want to remove a QuBit from the registry after measuring
+        if (type(msk) != list or len(msk) != int(np.log2(self.state.size)) or \
+            not all(type(num) == int and (num == 0 or num == 1) for num in msk)):
             raise ValueError('Not valid mask')
+        mask = []
+        for i in range(len(msk)):
+            if msk[i] == 1:
+                mask.append(i)
         tq = m.log(self.state.size,  2)
         if (not all(num < tq and num > -1 for num in mask)):
             raise ValueError('Out of range')
         measure = []
         for qbit in mask:
-            r = rnd.random()
+            #r = rnd.random()
+            r = np.random.uniform()
             p = 0
             max = 2**(tq - (qbit + 1))
             cnt = 0
