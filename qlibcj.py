@@ -1,4 +1,3 @@
-import math as m
 import cmath as cm
 import numpy as np
 import random as rnd
@@ -39,7 +38,7 @@ class QRegistry:
         for i in range(len(msk)):
             if msk[i] == 1:
                 mask.append(i)
-        tq = m.log(self.state.size,  2)
+        tq = int(np.log2(self.state.size))
         if (not all(num < tq and num > -1 for num in mask)):
             raise ValueError('Out of range')
         measure = []
@@ -101,9 +100,9 @@ class QRegistry:
             p = cm.polar(amp)[0]**2
             if p > 0:
                 if base == "e":
-                    entropy += (p * np.log(p))
+                    entropy += p * np.log(p)
                 elif type(base) == int or type(base) == float:
-                    entropy += (p * m.log(p, base))
+                    entropy += p * np.log(p)/np.log(base)
         return -entropy
 
 def UnitaryMatrix(mat, decimals=10):
@@ -117,8 +116,8 @@ def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
     return p
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
-    H = 1 / m.sqrt(2) * np.ones((2,2), dtype=complex)
-    H[1,1] = -1 / m.sqrt(2)
+    H = 1 / np.sqrt(2) * np.ones((2,2), dtype=complex)
+    H[1,1] = -1 / np.sqrt(2)
     if n > 1:
         H = np.kron(H, Hadamard(n - 1))
     return H
@@ -188,7 +187,7 @@ def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice 
     sqs = 0
     for i in range(0, state.size):
         sqs += cm.polar(state[0, i])[0]**2
-    sqs = m.sqrt(sqs)
+    sqs = np.sqrt(sqs)
     if (sqs == 0):
         raise ValueError('Impossible QuBit')
     if (sqs != 1):
@@ -298,7 +297,7 @@ def toComp(angle, sc=None): # Returns a complex number with module 1 and the spe
         angle -= 2*np.pi
     if sc == None:
         sc = getSC(angle)
-    res = np.around(m.cos(angle), decimals=sc-1) + np.around(m.sin(angle), decimals=sc-1)*1j
+    res = np.around(np.cos(angle), decimals=sc-1) + np.around(np.sin(angle), decimals=sc-1)*1j
     return res
 
 def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians)
@@ -390,26 +389,32 @@ def hopfCoords(qbit):
         phi = 0j
     return (theta, phi)
 
-def getTruthTable(gate, ancilla=None, garbage=0): # Prints the truth table of the given gate.
+def getTruthTable(gate, ancilla=None, garbage=0, iterations=1): # Prints the truth table of the given gate.
     # You can set the ancilla bits to not include them in the table, with the list of values they must have.
     # For example, if you have two 0s and one 1 as ancilla bits, ancilla[0,0,1]. It always takes the last bits as the ancilla ones!
     # The garbage=n removes the last n bits from the truth table, considering them garbage.
     # For example, if you have 6 outputs and the last 4 outputs are garbage, only the value of the first two would be printed.
     # Always removes the last n bits!
     num = int(np.log2(gate.shape[0]))
-    for i in range(0, gate.shape[0]):
-        nbin = [int(x) for x in bin(i)[2:]]
-        qinit = [0 for j in range(num - len(nbin))]
-        qinit += nbin
-        if ancilla == None or qinit[-len(ancilla):] == ancilla:
-            qr = QRegistry(qinit)
-            qr.ApplyGate(gate)
-            mes = qr.Measure([j for j in range(num-garbage)])
-            if ancilla != None:
-                ini = qinit[:-len(ancilla)]
-            else:
-                ini = qinit
-            print(str(ini) + " -> " + str(mes))
+    mesd = {}
+    for iteration in range(iterations):
+        for i in range(0, gate.shape[0]):
+            nbin = [int(x) for x in bin(i)[2:]]
+            qinit = [0 for j in range(num - len(nbin))]
+            qinit += nbin
+            if ancilla == None or qinit[-len(ancilla):] == ancilla:
+                qr = QRegistry(qinit)
+                qr.ApplyGate(gate)
+                mes = qr.Measure([1 for j in range(num-garbage)])
+                if ancilla != None:
+                    ini = qinit[:-len(ancilla)]
+                else:
+                    ini = qinit
+                if str(ini) not in mesd:
+                    mesd[str(ini)] = np.zeros(num)
+                mesd[str(ini)] = [x + y for x, y in zip(mesd[str(ini)], mes)]
+    for k in mesd:
+        print(k + " -> " + str(["P(1)=" + str(v/iterations) if v/iterations != 1.0 and v/iterations != 0.0 else int(v/iterations) for v in mesd[k]]))
 
 def QEq(q1, q2):
     return np.array_equal(q1,q2) and str(q1) == str(q2)
