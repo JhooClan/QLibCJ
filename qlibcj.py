@@ -109,6 +109,13 @@ def UnitaryMatrix(mat, decimals=10):
     mustbei = np.around(np.dot(mat, Dagger(mat)), decimals=decimals)
     return (mustbei == I(int(np.log2(mustbei.shape[0])))).all()
 
+def NormalizeGate(mat):
+    det = np.linalg.det(mat)
+    if det != 0:
+        return mat/det
+    else:
+        return None
+
 def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
     p = 0
     if (x < q.size):
