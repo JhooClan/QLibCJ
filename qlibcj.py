@@ -445,3 +445,36 @@ def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage
     fs = np.dot(fs, np.kron(I(3), np.kron(SWAP(), I(1))))
     fs = np.dot(fs, np.kron(I(1), np.kron(URG(), I(2))))
     return fs
+
+
+
+# Function that returns the 2^nth root of the unity
+def nroot(n, rc = 14): # Rounds to 14 decimal places by default
+    r = cm.exp(2j * cm.pi / pow(2, n))
+    return round(r.real, rc) + round(r.imag, rc) * 1j
+
+def RUnity(m, rc = 14):
+    ru = np.eye(2, dtype=complex)
+    ru[1,1] = nroot(m, rc)
+    return ru
+
+def QFT(size, rc = 14):
+    '''
+    size = 4
+    uft = np.kron(Hadamard(1), I(size - 1))
+    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
+    uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
+    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), np.dot(SWAP(), ControlledU(RUnity(4, rc)))))
+    uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
+    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
+    uft = np.dot(uft, np.kron(Hadamard(1), I(size - 1)))
+    uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
+    uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
+    uft = np.dot(uft, np.kron(SWAP(), SWAP()))
+    uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
+    uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
+    
+    return uft
+    '''
+    from tests.shor import DFT
+    return DFT(pow(2, size))
