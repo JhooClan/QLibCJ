@@ -72,7 +72,7 @@ def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque e
     print ("Assert: " + str(r.state == er.state))
     return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
-def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]
+def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]. Devuelve el resultado en los qubit de mayor peso y en el tercer qubit indica si ha habido overflow
     rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
     r = QRegistry(nums + [0,0,0,0,0,0,0]) # 7 bits de ancilla a 0 son necesarios en esta implementacion
     r.ApplyGate(I(1), SWAP(), SWAP(), I(6))

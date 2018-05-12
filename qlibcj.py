@@ -1,480 +1,338 @@
+# -*- coding: utf-8 -*-
+
 import cmath as cm
 import numpy as np
-import random as rnd
+from structures.qregistry import *
+from structures.qgate import *
+
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
 # La multiplicacion por un escalar se hace con *. n * A
 # Para multiplicar las matrices A y B se usa np.dot(A,B)
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
-class QRegistry:
-    def __init__(self, qbits, **kwargs):    # QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
-        if (type(qbits) != list or \
-            not qbits or \
-            #not all(type(qbit) == np.ndarray and \
-            #        qbit.shape == (1,2) and \
-            #        qbit.dtype == 'complex128' for qbit in qbits)):
-            not all(type(qbit) == type(0) and \
-                    (qbit == 0 or qbit == 1) for qbit in qbits)):
-            raise ValueError('Impossible QuBit Registry')
-        #qbs = qbits[:]
-        qbs = [QOne() if i else QZero() for i in qbits]
 
-        self.state = qbs[0]
-        Normalize(self.state)
-        del qbs[0]
-        for qbit in qbs:
-            Normalize(qbit)
-            self.state = np.kron(self.state, qbit)
-        Normalize(self.state)
-        #if (kwargs.get('seed', None) != None):
-        #    rnd.seed(kwargs['seed'])
-
-    def Measure(self, msk, remove = False): # List of numbers with the QuBits that should be measured. 0 means not measuring that qubit, 1 otherwise. remove = True if you want to remove a QuBit from the registry after measuring
-        if (type(msk) != list or len(msk) != int(np.log2(self.state.size)) or \
-            not all(type(num) == int and (num == 0 or num == 1) for num in msk)):
-            raise ValueError('Not valid mask')
-        mask = []
-        for i in range(len(msk)):
-            if msk[i] == 1:
-                mask.append(i)
-        tq = int(np.log2(self.state.size))
-        if (not all(num < tq and num > -1 for num in mask)):
-            raise ValueError('Out of range')
-        measure = []
-        for qbit in mask:
-            r = rnd.random()
-            p = 0
-            max = 2**(tq - (qbit + 1))
-            cnt = 0
-            rdy = True
-            for i in range(0, self.state.size):
-                if (cnt == max):
-                    rdy = not rdy
-                    cnt = 0
-                if (rdy):
-                    p += cm.polar(self.state[0,i])[0]**2
-                cnt += 1
-            if (r < p):
-                me = 0
-            else:
-                me = 1
-            measure.append(me)
-            self.Collapse((tq - (qbit + 1)), me, remove)
-        return measure
-
-    def ApplyGate(self, *gates): # Applies a quantum gate to the registry.
-        gate = gates[0]
-        for i in range(1, len(gates)):
-            gate = np.kron(gate, gates[i])
-        self.state = np.dot(Bra(self.state), gate)
-    
-    def Collapse(self, qbit, measure, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. measure is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
-        max = 2**qbit
-        cnt = 0
-        rdy = measure == 1
-        mfd = []
-        for i in range(0, self.state.size):
-            if (cnt == max):
-                rdy = not rdy
-                cnt = 0
-            if (rdy):
-                self.state[0, i] = 0
-                mfd.append(i)
-            cnt += 1
-        if (remove):
-            for qbit in mfd[::-1]:
-                self.state = np.delete(self.state, qbit, 1)
-        Normalize(self.state)
-    def DensityMatrix(self):
-        return np.dot(Ket(self.state), Bra(self.state))
-    def VNEntropy(self, **kwargs):
-        base = kwargs.get('base', "e")
-        #dm = self.DensityMatrix()
-        #evalues, m = np.linalg.eig(dm)
-        entropy = 0
-        #for e in evalues:
-        #    if e != 0:
-        #        entropy += e * np.log(e)
-        for amp in self.state[0]:
-            p = cm.polar(amp)[0]**2
-            if p > 0:
-                if base == "e":
-                    entropy += p * np.log(p)
-                elif type(base) == int or type(base) == float:
-                    entropy += p * np.log(p)/np.log(base)
-        return -entropy
-
-def UnitaryMatrix(mat, decimals=10):
-    mustbei = np.around(np.dot(mat, Dagger(mat)), decimals=decimals)
-    return (mustbei == I(int(np.log2(mustbei.shape[0])))).all()
-
-def NormalizeGate(mat):
-    det = np.linalg.det(mat)
-    if det != 0:
-        return mat/det
-    else:
-        return None
-
-def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
-    p = 0
-    if (x < q.size):
-        p = cm.polar(q[0,x])[0]**2
-    return p
+def hMat(n): # Devuelve una matriz que al ser multiplicada por 1/sqrt(2^n) resulta en la puerta Hadamard para n bits
+	H = np.ones((2,2), dtype=complex)
+	H[1,1] = -1
+	if n > 1:
+		H = np.kron(H, hMat(n - 1))
+	return H
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
-    H = 1 / np.sqrt(2) * np.ones((2,2), dtype=complex)
-    H[1,1] = -1 / np.sqrt(2)
-    if n > 1:
-        H = np.kron(H, Hadamard(n - 1))
-    return H
-
-def QBit(a,b): # Devuelve un QuBit con a y b. q = a|0> + b|1>, con a y b complejos
-    q = np.array([a,b], dtype=complex)
-    q.shape = (1,2)
-    Normalize(q)
-    return q
-
-def QZero(): # Devuelve un QuBit en el estado 0
-    q = np.array([complex(1,0),complex(0,0)])
-    q.shape = (1,2)
-    return q
-
-def QOne(): # Devuelve un QuBit en el estado 1
-    q = np.array([complex(0,0),complex(1,0)])
-    q.shape = (1,2)
-    return q
+	H = QGate("H")
+	H.addLine(hMat(n))
+	H.setMult(1 / np.sqrt(2**n))
+	return H
 
 def PauliX(): # Also known as NOT
-    px = np.array([0,1,1,0], dtype=complex)
-    px.shape = (2,2)
-    return px
+	px = QGate("NOT")
+	m = np.array([0,1,1,0], dtype=complex)
+	m.shape = (2,2)
+	px.addLine(m)
+	return px
 
 def PauliY():
-    py = np.array([0,-1j,1j,0], dtype=complex)
-    py.shape = (2,2)
-    return py
+	py = QGate("Y")
+	m = np.array([0,-1j,1j,0], dtype=complex)
+	m.shape = (2,2)
+	py.addLine(m)
+	return py
 
 def PauliZ():
-    pz = np.array([1,0,0,-1], dtype=complex)
-    pz.shape = (2,2)
-    return pz
+	pz = QGate("Z")
+	m = np.array([1,0,0,-1], dtype=complex)
+	m.shape = (2,2)
+	pz.addLine(m)
+	return pz
 
-def V(): # V gate, usually seen in its controlled form C-V. Its hermitian also can be seen as V+.
-#    v = np.array([1,0,0,1j], dtype=complex)
-#    v.shape = (2,2)
-#    return v
-    v = np.array([1, -1j, -1j, 1], dtype=complex)
-    v.shape = (2,2)
-    return v * ((1 + 1j)/2)
-
-def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
-    b = v[:]
-    s = v.shape
-    if s[0] != 1:
-        b = np.transpose(b)
-    return b
-
-def Ket(v): # Devuelve el QuBit pasado como parametro en forma de columna. |q>
-    k = v[:]
-    s = v.shape
-    if s[1] != 1:
-        k = np.transpose(k)
-    return k
-
-def ApplyGate(state, gate): # Devuelve el resultado de aplicar una puerta logica sobre una serie de estados. El QuBit mas significativo a la izquierda de la lista.
-    return np.dot(Bra(state), gate)
-
-def Superposition(x, y): # Devuelve el estado compuesto por los dos QuBits.
-    z = np.kron(x, y)
-    Normalize(z)
-    return z
-
-def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice que |a|^2 + |b|^2 = 1 para cualquier QuBit. Si no se cumple, modifica el QuBit para que la cumpla si se puede.
-    sqs = 0
-    for i in range(0, state.size):
-        sqs += cm.polar(state[0, i])[0]**2
-    sqs = np.sqrt(sqs)
-    if (sqs == 0):
-        raise ValueError('Impossible QuBit')
-    if (sqs != 1):
-        for bs in state:
-            bs /= sqs
+def SqrtNOT(): # Square root of NOT gate, usually seen in its controlled form C-SqrtNOT. Sometimes called V gate.
+	v = QGate("√NOT")
+	m = np.array([1, -1j, -1j, 1], dtype=complex)
+	m.shape = (2,2)
+	v.addLine(m)
+	v.setMult((1 + 1j)/2)
+	return v
 
 def SWAP(): # SWAP gate for 2 qubits
-    sw = np.zeros((4,4), dtype=complex)
-    sw[0,0] = 1
-    sw[1,2] = 1
-    sw[2,1] = 1
-    sw[3,3] = 1
-    return sw
+	sw = QGate("SWAP")
+	m = np.zeros((4,4), dtype=complex)
+	m[0,0] = 1
+	m[1,2] = 1
+	m[2,1] = 1
+	m[3,3] = 1
+	sw.addLine(m)
+	return sw
 
 def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
-    sw = np.zeros((4,4), dtype=complex)
-    sw[0,0] = 1
-    sw[1,1] = 0.5 * (1+1j)
-    sw[1,2] = 0.5 * (1-1j)
-    sw[2,1] = 0.5 * (1-1j)
-    sw[2,2] = 0.5 * (1+1j)
-    sw[3,3] = 1
-    return sw
-
-'''
-def SqrtNOT(): # Square root of NOT gate, also called V gate
-    sn = np.array([1+1j, 1-1j, 1-1j, 1+1j], dtype=complex)
-    sn.shape = (2,2)
-    return sn * 0.5
-'''
+	sw = QGate("√SWAP")
+	m = np.zeros((4,4), dtype=complex)
+	m[0,0] = 1
+	m[1,1] = 0.5 * (1+1j)
+	m[1,2] = 0.5 * (1-1j)
+	m[2,1] = 0.5 * (1-1j)
+	m[2,2] = 0.5 * (1+1j)
+	m[3,3] = 1
+	sw.addLine(m)
+	return sw
 
 def ControlledU(gate): # Returns a controlled version of the given gate
-    gdim = gate.shape[0]
-    cu = np.eye(gdim*2, dtype=complex)
-    cu[gdim:,gdim:] = gate
-    return cu
+	g = gate
+	name = "U"
+	if type(gate) == QGate:
+		g = gate.m
+		name = gate.name
+	gdim = g.shape[0]
+	m = np.eye(gdim*2, dtype=complex)
+	m[gdim:,gdim:] = g
+	cu = QGate("C-" + name)
+	cu.addLine(m)
+	return cu
 
 def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
-    return ControlledU(PauliX())
+	return ControlledU(PauliX())
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
-    ''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-V and Controlled-V+
-    # Gates needed (without control SWAPs): 5
-    gate = np.kron(I(1), ControlledU(V()))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    return gate
-    '''
-    return ControlledU(CNOT())
+	''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-SNot and Controlled-SNot+
+	# Gates needed (without control SWAPs): 5
+	gate = np.kron(I(1), ControlledU(V()))
+	gate = np.dot(gate, np.kron(SWAP(), I(1)))
+	gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
+	gate = np.dot(gate, np.kron(CNOT(), I(1)))
+	gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
+	gate = np.dot(gate, np.kron(CNOT(), I(1)))
+	gate = np.dot(gate, np.kron(SWAP(), I(1)))
+	return gate
+	'''
+	return ControlledU(CNOT())
 
 def Fredkin(): # Returns a CSWAP gate for three QuBits
-    return ControlledU(SWAP())
+	return ControlledU(SWAP())
 
 def I(n): # Returns Identity Matrix for the specified number of QuBits
-    #IM = np.array([[1,0],[0,1]], dtype=complex)
-    #if n > 1:
-    #    IM = np.kron(IM, I(n - 1))
-    return np.eye(2**n, dtype=complex)
+	#IM = np.array([[1,0],[0,1]], dtype=complex)
+	#if n > 1:
+	#	IM = np.kron(IM, I(n - 1))
+	return np.eye(2**n, dtype=complex)
 
 def Deutsch(angle): # Returns Deutsh gate with specified angle. D(pi/2) = Toffoli
-    d = np.eye(8, dtype=complex)
-    can = np.cos(angle)
-    san = np.sin(angle)
-    d[6,6] = can * 1j
-    d[6,7] = san
-    d[7,6] = san
-    d[7,7] = can * 1j
-    return d
+	d = np.eye(8, dtype=complex)
+	can = np.cos(angle)
+	san = np.sin(angle)
+	d[6,6] = can * 1j
+	d[6,7] = san
+	d[7,6] = san
+	d[7,7] = can * 1j
+	g = QGate("D-" + str(angle))
+	g.addLine(d)
+	return g
 
-def Transpose(gate): # Returns the Transpose of the given matrix
-    return np.matrix.transpose(gate)
+def getSC(number): # Gets the number of significative ciphers of a given number
+	return len(str(number).replace('.', ''))
 
-def Dagger(gate): # Returns the Hermitian Conjugate or Conjugate Transpose of the given matrix
-    return np.matrix.getH(gate)
-
-def Invert(gate): # Returns the inverse of the given matrix
-    return np.linalg.inv(gate)
-
-def getSC(number):
-    return len(str(number).replace('.', ''))
-
-def setSC(number, sc):
-    res = 0
-    num = str(number).split('.')
-    i = len(num[0])
-    d = 0
-    if i >= sc:
-        diff = i - sc
-        res = int(num[0][0:sc]+"0"*diff)
-    elif len(num) == 2:
-        d = len(num[1])
-        tsc = min(sc - i, d)
-        diff = 0
-        if sc - i > d:
-            diff = sc - i - d
-        res = float(num[0] + '.' + num[1][0:tsc]+"0"*diff)
-        if d > tsc and num[1][tsc] >= '5':
-            res += 10**-tsc
-    return res
+def setSC(number, sc): # Returns the specified number with the specified significative ciphers
+	res = 0
+	num = str(number).split('.')
+	i = len(num[0])
+	d = 0
+	if i >= sc:
+		diff = i - sc
+		res = int(num[0][0:sc]+"0"*diff)
+	elif len(num) == 2:
+		d = len(num[1])
+		tsc = min(sc - i, d)
+		diff = 0
+		if sc - i > d:
+			diff = sc - i - d
+		res = float(num[0] + '.' + num[1][0:tsc]+"0"*diff)
+		if d > tsc and num[1][tsc] >= '5':
+			res += 10**-tsc
+	return res
 
 def toComp(angle, sc=None): # Returns a complex number with module 1 and the specified phase.
-    while angle >= 2*np.pi:
-        angle -= 2*np.pi
-    if sc == None:
-        sc = getSC(angle)
-    res = np.around(np.cos(angle), decimals=sc-1) + np.around(np.sin(angle), decimals=sc-1)*1j
-    return res
+	while angle >= 2*np.pi:
+		angle -= 2*np.pi
+	if sc == None:
+		sc = getSC(angle)
+	res = np.around(np.cos(angle), decimals=sc-1) + np.around(np.sin(angle), decimals=sc-1)*1j
+	return res
 
 def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians)
-    ps = np.array([1, 0, 0, toComp(angle)], dtype=complex)
-    ps.shape = (2,2)
-    return ps
+	ps = np.array([1, 0, 0, toComp(angle)], dtype=complex)
+	ps.shape = (2,2)
+	g = QGate("R(" + str(angle) + ")")
+	return ps
 
 def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
-    ''' # Implementation of Peres gate with smaller gates.
-    # Gates needed (without control SWAPs): 4
-    gate = np.kron(SWAP(), I(1))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    return gate
-    '''
-    return np.dot(Toffoli(), np.kron(CNOT(), I(1)))
+	''' # Implementation of Peres gate with smaller gates.
+	# Gates needed (without control SWAPs): 4
+	p = QGate("Peres")
+	p.addLine(SWAP(), I(1))
+	p.addLine(I(1), ControlledU(SqrtNOT()))
+	p.addLine(SWAP(), I(1))
+	p.addLine(I(1), ControlledU(SqrtNOT()))
+	p.addLine(CNOT(), I(1))
+	p.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	return p
+	'''
+	p = QGate("Peres")
+	p.addLine(Toffoli())
+	p.addLine(CNOT(), I(1))
+	return p
 
 def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
-    ''' Old implementation using Peres gate.
-    gate = np.kron(I(2), PauliX())
-    gate = np.dot(gate, Peres())
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    '''
-    # Optimized implementation with smaller gates
-    # Gates needed (without control SWAPs): 6
-    gate = np.kron(SWAP(), PauliX())
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    return gate
+	# Optimized implementation with smaller gates
+	# Gates needed (without control SWAPs): 6
+	r = QGate("R")
+	r.addLine(SWAP(), PauliX())
+	r.addLine(I(1), ControlledU(SqrtNOT()))
+	r.addLine(SWAP(), I(1))
+	r.addLine(I(1), ControlledU(SqrtNOT()))
+	r.addLine(CNOT(), I(1))
+	r.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	r.addLine(SWAP(), I(1))
+	return r
 
 def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
-    # Implementation of TR gate with smaller gates.
-    # Gates needed (without control SWAPs): 6
-    gate = np.kron(I(1), np.kron(PauliX(), I(1)))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(I(1), np.kron(PauliX(), I(1))))
-    return gate
+	# Implementation of TR gate with smaller gates.
+	# Gates needed (without control SWAPs): 6
+	tr = QGate("TR")
+	tr.addLine(I(1), PauliX(), I(1))
+	tr.addLine(SWAP(), I(1))
+	tr.addLine(I(1), ControlledU(SqrtNOT()))
+	tr.addLine(SWAP(), I(1))
+	tr.addLine(I(1), ControlledU(SqrtNOT()))
+	tr.addLine(CNOT(), I(1))
+	tr.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	tr.addLine(I(1), PauliX(), I(1))
+	return tr
 
 def URG(): # A, B, C -> P = (A+B) XOR C, Q = B, R = AB XOR C.
-    # Implementation of URG gate with smaller gates.
-    # Gates needed (without control SWAPs): 8
-    gate = np.kron(I(1), ControlledU(V()))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(Dagger(V()))))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), SWAP()))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), CNOT()))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), SWAP()))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    return gate
+	# Implementation of URG gate with smaller gates.
+	# Gates needed (without control SWAPs): 8
+	urg = QGate("URG")
+	urg.addLine(I(1), ControlledU(SqrtNOT()))
+	urg.addLine(SWAP(), I(1))
+	urg.addLine(I(1), ControlledU(SqrtNOT()))
+	urg.addLine(CNOT(), I(1))
+	urg.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	urg.addLine(CNOT(), I(1))
+	urg.addLine(I(1), SWAP())
+	urg.addLine(CNOT(), I(1))
+	urg.addLine(I(1), CNOT())
+	urg.addLine(CNOT(), I(1))
+	urg.addLine(I(1), SWAP())
+	urg.addLine(SWAP(), I(1))
+	return urg
 
 def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
-    # Implementation of TR gate with smaller gates.
-    # Gates needed (without control SWAPs): 5
-    gate = np.kron(SWAP(), I(1))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(SWAP(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    gate = np.dot(gate, np.kron(I(1), ControlledU(V())))
-    gate = np.dot(gate, np.kron(CNOT(), I(1)))
-    return gate
+	# Implementation of TR gate with smaller gates.
+	# Gates needed (without control SWAPs): 5
+	bjn = QGate("BJN")
+	bjn.addLine(SWAP(), I(1))
+	bjn.addLine(I(1), ControlledU(SqrtNOT()))
+	bjn.addLine(SWAP(), I(1))
+	bjn.addLine(I(1), ControlledU(SqrtNOT()))
+	bjn.addLine(CNOT(), I(1))
+	bjn.addLine(I(1), ControlledU(SqrtNOT()))
+	bjn.addLine(CNOT(), I(1))
+	return bjn
 
 def hopfCoords(qbit):
-    alpha = qbit[0][0]
-    beta = qbit[0][1]
-    theta = np.arccos(alpha) * 2
-    print (theta)
-    s = np.sin(theta/2)
-    if (s != 0):
-        phi = np.log(beta/np.sin(theta/2)) / 1j
-    else:
-        phi = 0j
-    return (theta, phi)
+	alpha = qbit[0][0]
+	beta = qbit[0][1]
+	theta = np.arccos(alpha) * 2
+	print (theta)
+	s = np.sin(theta/2)
+	if (s != 0):
+		phi = np.log(beta/np.sin(theta/2)) / 1j
+	else:
+		phi = 0j
+	return (theta, phi)
 
 def getTruthTable(gate, ancilla=None, garbage=0, iterations=1): # Prints the truth table of the given gate.
-    # You can set the ancilla bits to not include them in the table, with the list of values they must have.
-    # For example, if you have two 0s and one 1 as ancilla bits, ancilla[0,0,1]. It always takes the last bits as the ancilla ones!
-    # The garbage=n removes the last n bits from the truth table, considering them garbage.
-    # For example, if you have 6 outputs and the last 4 outputs are garbage, only the value of the first two would be printed.
-    # Always removes the last n bits!
-    num = int(np.log2(gate.shape[0]))
-    mesd = {}
-    for iteration in range(iterations):
-        for i in range(0, gate.shape[0]):
-            nbin = [int(x) for x in bin(i)[2:]]
-            qinit = [0 for j in range(num - len(nbin))]
-            qinit += nbin
-            if ancilla == None or qinit[-len(ancilla):] == ancilla:
-                qr = QRegistry(qinit)
-                qr.ApplyGate(gate)
-                mes = qr.Measure([1 for j in range(num-garbage)])
-                if ancilla != None:
-                    ini = qinit[:-len(ancilla)]
-                else:
-                    ini = qinit
-                if str(ini) not in mesd:
-                    mesd[str(ini)] = np.zeros(num)
-                mesd[str(ini)] = [x + y for x, y in zip(mesd[str(ini)], mes)]
-    for k in mesd:
-        print(k + " -> " + str(["P(1)=" + str(v/iterations) if v/iterations != 1.0 and v/iterations != 0.0 else int(v/iterations) for v in mesd[k]]))
+	# You can set the ancilla bits to not include them in the table, with the list of values they must have.
+	# For example, if you have two 0s and one 1 as ancilla bits, ancilla[0,0,1]. It always takes the last bits as the ancilla ones!
+	# The garbage=n removes the last n bits from the truth table, considering them garbage.
+	# For example, if you have 6 outputs and the last 4 outputs are garbage, only the value of the first two would be printed.
+	# Always removes the last n bits!
+	num = int(np.log2(gate.shape[0]))
+	mesd = {}
+	for iteration in range(iterations):
+		for i in range(0, gate.shape[0]):
+			nbin = [int(x) for x in bin(i)[2:]]
+			qinit = [0 for j in range(num - len(nbin))]
+			qinit += nbin
+			if ancilla == None or qinit[-len(ancilla):] == ancilla:
+				qr = QRegistry(qinit)
+				qr.ApplyGate(gate)
+				mes = qr.Measure([1 for j in range(num-garbage)])
+				if ancilla != None:
+					ini = qinit[:-len(ancilla)]
+				else:
+					ini = qinit
+				if str(ini) not in mesd:
+					mesd[str(ini)] = np.zeros(num)
+				mesd[str(ini)] = [x + y for x, y in zip(mesd[str(ini)], mes)]
+	for k in mesd:
+		print(k + " -> " + str(["P(1)=" + str(v/iterations) if v/iterations != 1.0 and v/iterations != 0.0 else int(v/iterations) for v in mesd[k]]))
 
 def QEq(q1, q2):
-    return np.array_equal(q1,q2) and str(q1) == str(q2)
+	return np.array_equal(q1,q2) and str(q1) == str(q2)
 
 def HalfSubstractor(): # A, B, 0 -> P = A-B, Q = Borrow, R = B = Garbage
-    hs = np.kron(SWAP(), I(1))
-    hs = np.dot(hs, TR())
-    hs = np.dot(hs, np.kron(SWAP(), I(1)))
-    hs = np.dot(hs, np.kron(I(1), SWAP()))
-    return hs
+	hs = QGate("Half Substractor")
+	hs.addLine(SWAP(), I(1))
+	hs.addLine(TR())
+	hs.addLine(SWAP(), I(1))
+	hs.addLine(I(1), SWAP())
+	return hs
 
 def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage, S = B1B2 = Garbage, T = Bin = Garbage, U = B = Garbage
-    # Can be used as a comparator. Q will be 0 if A>=B, 1 otherwise.
-    fs = np.kron(I(2), np.kron(SWAP(), I(2)))
-    fs = np.dot(fs, np.kron(HalfSubstractor(), I(3)))
-    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), I(2))))
-    fs = np.dot(fs, np.kron(I(1), np.kron(SWAP(), np.kron(SWAP(), I(1)))))
-    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), SWAP())))
-    fs = np.dot(fs, np.kron(HalfSubstractor(), I(3)))
-    fs = np.dot(fs, np.kron(I(2), np.kron(SWAP(), I(2))))
-    fs = np.dot(fs, np.kron(I(3), np.kron(SWAP(), I(1))))
-    fs = np.dot(fs, np.kron(I(1), np.kron(URG(), I(2))))
-    return fs
+	# Can be used as a comparator. Q will be 0 if A>=B, 1 otherwise.
+	fs = QGate("Substractor")
+	fs.addLine(I(2), SWAP(), I(2))
+	fs.addLine(HalfSubstractor(), I(3))
+	fs.addLine(I(2), SWAP(), I(2))
+	fs.addLine(I(1), SWAP(), SWAP(), I(1))
+	fs.addLine(I(2), SWAP(), SWAP())
+	fs.addLine(HalfSubstractor(), I(3))
+	fs.addLine(I(2), SWAP(), I(2))
+	fs.addLine(I(3), SWAP(), I(1))
+	fs.addLine(I(1), URG(), I(2))
+	return fs
 
 
 
 # Function that returns the 2^nth root of the unity
 def nroot(n, rc = 14): # Rounds to 14 decimal places by default
-    r = cm.exp(2j * cm.pi / pow(2, n))
-    return round(r.real, rc) + round(r.imag, rc) * 1j
+	r = cm.exp(2j * cm.pi / pow(2, n))
+	return round(r.real, rc) + round(r.imag, rc) * 1j
 
 def RUnity(m, rc = 14):
-    ru = np.eye(2, dtype=complex)
-    ru[1,1] = nroot(m, rc)
-    return ru
+	ru = np.eye(2, dtype=complex)
+	ru[1,1] = nroot(m, rc)
+	g = QGate("RU" + str(m))
+	g.addLine(ru)
+	return g
 
 def QFT(size, rc = 14):
-    '''
-    size = 4
-    uft = np.kron(Hadamard(1), I(size - 1))
-    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
-    uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
-    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), np.dot(SWAP(), ControlledU(RUnity(4, rc)))))
-    uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
-    uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
-    uft = np.dot(uft, np.kron(Hadamard(1), I(size - 1)))
-    uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
-    uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
-    uft = np.dot(uft, np.kron(SWAP(), SWAP()))
-    uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
-    uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
-    
-    return uft
-    '''
-    from tests.shor import DFT
-    return DFT(pow(2, size))
+	'''
+	size = 4
+	uft = np.kron(Hadamard(1), I(size - 1))
+	uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
+	uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
+	uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), np.dot(SWAP(), ControlledU(RUnity(4, rc)))))
+	uft = np.dot(uft, np.kron(Hadamard(1), np.kron(np.dot(SWAP(), ControlledU(RUnity(3, rc))), I(size - 3))))
+	uft = np.dot(uft, np.kron(np.dot(SWAP(), ControlledU(RUnity(2, rc))), I(size - 2)))
+	uft = np.dot(uft, np.kron(Hadamard(1), I(size - 1)))
+	uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
+	uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
+	uft = np.dot(uft, np.kron(SWAP(), SWAP()))
+	uft = np.dot(uft, np.kron(I(size - 3), np.kron(SWAP(), I(size - 3))))
+	uft = np.dot(uft, np.kron(SWAP(), I(size - 2)))
+	
+	return uft
+	'''
+	from tests.shor import DFT
+	return DFT(pow(2, size))
