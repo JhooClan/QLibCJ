@@ -1,5 +1,6 @@
 from structures.qgate import QGate
 from structures.qregistry import *
+import gc
 
 class Measure(object):
 	def __init__(self, mask, tasks=[], conds=[], remove=False):
@@ -52,7 +53,7 @@ class Condition(object):
 		return r
 
 class QCircuit(object):
-	def __init__(self, name="UNNAMED", save=False):
+	def __init__(self, name="UNNAMED", save=True): # You can choose whether to save the circuit and apply gates separately on each computation (faster circuit creation) or to precompute the matrixes (faster execution)
 		self.matrix = [1]
 		self.measure = []
 		self.save = save
@@ -61,29 +62,49 @@ class QCircuit(object):
 		self.name = name
 	
 	def addLine(self, *args):
-		if self.save:
-			self.lines.append(list(args))
-		if type(args[0]) != Measure:
-			mlen = len(self.measure)
-			aux = getMatrix(args[0])
-			for gate in list(args)[1:]:
-				aux = np.kron(aux, getMatrix(gate))
-			self.matrix[mlen] = np.dot(self.matrix[mlen], aux)
-			if self.plan[-1] != 0:
-				self.plan.append(0)
-		else:
-			self.measure.append(args[0])
-			self.plan.append(1)
+		try:
+			if self.save:
+				self.lines.append(list(args))
+			else:
+				if type(args[0]) != Measure:
+					mlen = len(self.measure)
+					aux = getMatrix(args[0])
+					for gate in list(args)[1:]:
+						aux = np.kron(aux, getMatrix(gate))
+					self.matrix[mlen] = np.dot(self.matrix[mlen], aux)
+					if self.plan[-1] != 0:
+						self.plan.append(0)
+				else:
+					self.measure.append(args[0])
+					self.plan.append(1)
+		finally:
+			gc.collect()
 	
 	def execute(self, qregistry):
 		r = qregistry
-		gid = 0
-		mid = 0
-		for task in self.plan:
-			if task == 0:
-				r.ApplyGate(self.matrix[gid])
-				gid += 1
+		try:
+			if self.save:
+				for line in self.lines:
+					g = line[0]
+					if type(g) != Measure:
+						g = getMatrix(g)
+						for gate in line[1:]:
+							g = np.kron(g, getMatrix(gate))
+						r.ApplyGate(g)
+					else:
+						r = g.measure(r)
+					gc.collect()
 			else:
-				r = self.measure[mid].measure(r)
-				mid += 1
+				gid = 0
+				mid = 0
+				for task in self.plan:
+					if task == 0:
+						r.ApplyGate(self.matrix[gid])
+						gid += 1
+					else:
+						r = self.measure[mid].measure(r)
+						mid += 1
+					gc.collect()
+		finally:
+			gc.collect()
 		return r

@@ -1,4 +1,5 @@
 import numpy as np
+import gc
 
 class QGate(object):
 	def __init__(self, name="UNNAMED"):
@@ -133,7 +134,9 @@ class QGate(object):
 			if type(gate) == QGate:
 				g = gate.m
 			aux = np.kron(aux, g)
+			gc.collect()
 		self.m = np.dot(self.m, aux)
+		gc.collect()
 	
 	def setMult(self, mult):
 		self.m *= mult/self.mult
