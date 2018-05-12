@@ -52,15 +52,17 @@ class Condition(object):
 		return r
 
 class QCircuit(object):
-	def __init__(self, name="UNNAMED"):
+	def __init__(self, name="UNNAMED", save=False):
 		self.matrix = [1]
 		self.measure = []
+		self.save = save
 		self.lines = []
 		self.plan = [0]
 		self.name = name
 	
 	def addLine(self, *args):
-		self.lines.append(list(args))
+		if self.save:
+			self.lines.append(list(args))
 		if type(args[0]) != Measure:
 			mlen = len(self.measure)
 			aux = getMatrix(args[0])
@@ -70,7 +72,6 @@ class QCircuit(object):
 			if self.plan[-1] != 0:
 				self.plan.append(0)
 		else:
-			self.lines.append(args[0])
 			self.measure.append(args[0])
 			self.plan.append(1)
 	
