@@ -4,6 +4,7 @@ import cmath as cm
 import numpy as np
 from structures.qregistry import *
 from structures.qgate import *
+from structures.qcircuit import *
 
 # np.zeros((h,w), dtype=complex) Inicializa una matriz de numeros complejos con alto h y ancho w
 # La suma de matrices se realiza con +. A + B
