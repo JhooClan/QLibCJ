@@ -9,14 +9,13 @@ def DJAlg(size, U_f, **kwargs): # U_f es el oraculo, que debe tener x1..xn e y c
 	return r.Measure([1 for i in range(size - 1)] + [0]) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 
 def exampleDJCircuit(size, U_f, **kwargs):
-	c = DJAlgCircuit(size, U_f)
 	rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
-	r = QRegistry(([0 for i in range(size - 1)] + [1])) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno
+	c = DJAlgCircuit(size, U_f, save=kwargs.get('save', True))
 	
-	return c.execute(r)
+	return c.execute([0 for i in range(size - 1)]) # Los qubits se inicializan a cero (x1..xn) excepto el ultimo (y), inicializado a uno por el circuito tal y como se indicó en su construccion
 
 def DJAlgCircuit(size, U_f, save=True): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
-	c = QCircuit("Deutsch-Josza Algorithm", save=save)
+	c = QCircuit("Deutsch-Josza Algorithm", save=save, ancilla=[1]) # El ultimo QuBit al ejecutar el algoritmo es de ancilla, con su valor a 1
 	c.addLine(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
 	c.addLine(U_f) # Se aplica el oraculo
 	c.addLine(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo

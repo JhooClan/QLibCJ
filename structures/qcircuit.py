@@ -53,13 +53,14 @@ class Condition(object):
 		return r
 
 class QCircuit(object):
-	def __init__(self, name="UNNAMED", save=True): # You can choose whether to save the circuit and apply gates separately on each computation (faster circuit creation) or to precompute the matrixes (faster execution)
+	def __init__(self, name="UNNAMED", ancilla=[], save=True): # You can choose whether to save the circuit and apply gates separately on each computation (faster circuit creation) or to precompute the matrixes (faster execution)
+		self.name = name
 		self.matrix = [1]
 		self.measure = []
-		self.save = save
 		self.lines = []
 		self.plan = [0]
-		self.name = name
+		self.ancilla = ancilla
+		self.save = save
 	
 	def addLine(self, *args):
 		try:
@@ -71,7 +72,9 @@ class QCircuit(object):
 					aux = getMatrix(args[0])
 					for gate in list(args)[1:]:
 						aux = np.kron(aux, getMatrix(gate))
+					del args
 					self.matrix[mlen] = np.dot(self.matrix[mlen], aux)
+					del aux
 					if self.plan[-1] != 0:
 						self.plan.append(0)
 				else:
@@ -80,8 +83,10 @@ class QCircuit(object):
 		finally:
 			gc.collect()
 	
-	def execute(self, qregistry):
+	def execute(self, qregistry): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
 		r = qregistry
+		if type(qregistry) != QRegistry:
+			r = QRegistry(qregistry + self.ancilla)
 		try:
 			if self.save:
 				for line in self.lines:
@@ -91,6 +96,7 @@ class QCircuit(object):
 						for gate in line[1:]:
 							g = np.kron(g, getMatrix(gate))
 						r.ApplyGate(g)
+						del g
 					else:
 						r = g.measure(r)
 					gc.collect()
