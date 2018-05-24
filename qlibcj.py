@@ -110,12 +110,6 @@ def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B,
 def Fredkin(): # Returns a CSWAP gate for three QuBits
 	return ControlledU(SWAP())
 
-def I(n): # Returns Identity Matrix for the specified number of QuBits
-	#IM = np.array([[1,0],[0,1]], dtype=complex)
-	#if n > 1:
-	#	IM = np.kron(IM, I(n - 1))
-	return np.eye(2**n, dtype=complex)
-
 def Deutsch(angle): # Returns Deutsh gate with specified angle. D(pi/2) = Toffoli
 	d = np.eye(8, dtype=complex)
 	can = np.cos(angle)

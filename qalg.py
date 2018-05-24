@@ -90,6 +90,31 @@ def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque e
 	print ("Assert: " + str(r.state == er.state))
 	return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
+def TeleportationCircuit(save=True): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
+	qc = QCircuit("Teleportation", save=save, ancilla=[0, 0])
+	qc.addLine(I(1), Hadamard(1), I(1))
+	qc.addLine(I(1), CNOT())
+	# Aqui es donde trabajamos con el qubit Q que queremos enviar posteriormente. En este caso de ejemplo le vamos a aplicar Hadamard y despues un cambio de fase de pi/2
+	qc.addLine(Hadamard(1), I(2))
+	qc.addLine(PhaseShift(np.pi/2), I(2))
+	# Una vez terminado todo lo que queremos hacerle al QuBit, procedemos a preparar el envio
+	qc.addLine(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
+	qc.addLine(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
+	
+	qc1 = QCircuit("TAux1", save=False)
+	qc1.addLine(PauliZ())
+	
+	qc2 = QCircuit("TAux1", save=False)
+	qc2.addLine(PauliX())
+	
+	c1 = Condition([1, None, None], qc1)
+	c2 = Condition([None, 1, None], qc2)
+	m = Measure([1, 1, 0], conds=[c1, c2], remove=True)
+	
+	qc.addLine(m)
+	
+	return qc # Se devuelve el registro obtenido tras aplicar el algoritmo.
+
 def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]. Devuelve el resultado en los qubit de mayor peso y en el tercer qubit indica si ha habido overflow
 	rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
 	r = QRegistry(nums + [0,0,0,0,0,0,0]) # 7 bits de ancilla a 0 son necesarios en esta implementacion

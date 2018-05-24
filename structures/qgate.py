@@ -149,6 +149,12 @@ class QGate(object):
 	def setName(self, name):
 		self.name = name
 
+def I(n): # Returns Identity Matrix for the specified number of QuBits
+	#IM = np.array([[1,0],[0,1]], dtype=complex)
+	#if n > 1:
+	#	IM = np.kron(IM, I(n - 1))
+	return np.eye(2**n, dtype=complex)
+
 def getMatrix(gate):
 	m = gate
 	if type(gate) == QGate:
@@ -156,7 +162,7 @@ def getMatrix(gate):
 	return m
 
 def UnitaryMatrix(mat, decimals=10):
-	mustbei = np.around(np.dot(mat, Dagger(mat)), decimals=decimals)
+	mustbei = np.around(np.dot(getMatrix(mat), getMatrix(Dagger(mat))), decimals=decimals)
 	return (mustbei == I(int(np.log2(mustbei.shape[0])))).all()
 
 def NormalizeGate(mat):

@@ -32,7 +32,7 @@ class Measure(object):
 		
 
 class Condition(object):
-	def __init__(self, cond, ifcase, elcase):
+	def __init__(self, cond, ifcase, elcase = None):
 		# cond is an array of what we expect to have measured in each QuBit. None if we don't care about a certain value. Example: [0, 1, None, None, 1].
 		# ifcase and elcase can be Conditions or QCircuits to be applied to the registry. They can also be functions that take the registry and the result as a parameter.
 		self.cond = cond
@@ -40,16 +40,18 @@ class Condition(object):
 		self.elcase = elcase
 	
 	def evaluate(self, qregistry, mresults):
-		case = elcase
-		if mresults == cond:
-			case = ifcase
+		case = self.elcase
+		if mresults == self.cond:
+			case = self.ifcase
 		t = type(case)
 		if t == Condition:
 			r = case.evaluate(qregistry, mresults)
 		elif t == QCircuit:
 			r = case.execute(qregistry)
-		else:
+		elif t != type(None):
 			r = case(qregistry, mresults)
+		else:
+			r = qregistry
 		return r
 
 class QCircuit(object):
