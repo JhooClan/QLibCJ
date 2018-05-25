@@ -20,14 +20,14 @@ class Measure(object):
 			mres.append(tap)
 		return mres
 	
-	def measure(self, qregistry):
+	def measure(self, qregistry, initialD):
 		res = qregistry.Measure(self.mask, remove=self.remove)
-		for task in self.tasks:
-			task(res)
 		res = self.mesToList(res)
 		r = qregistry
 		for cond in self.conds:
 			r = cond.evaluate(r, res)
+		for task in self.tasks:
+			task(r, res, initialD)
 		return r
 		
 
@@ -41,7 +41,7 @@ class Condition(object):
 	
 	def evaluate(self, qregistry, mresults):
 		case = self.elcase
-		if mresults == self.cond:
+		if specialCompare(self.cond, mresults):
 			case = self.ifcase
 		t = type(case)
 		if t == Condition:
@@ -89,6 +89,13 @@ class QCircuit(object):
 		r = qregistry
 		if type(qregistry) != QRegistry:
 			r = QRegistry(qregistry + self.ancilla)
+			ini = qregistry[:]
+		else:
+			ini = qregistry.state[:]
+			if self.ancilla is not None and len(self.ancilla) > 0:
+				print (self.ancilla)
+				aux = QRegistry(self.ancilla)
+				r.state = np.kron(r.state, aux.state)
 		try:
 			if self.save:
 				for line in self.lines:
@@ -100,7 +107,7 @@ class QCircuit(object):
 						r.ApplyGate(g)
 						del g
 					else:
-						r = g.measure(r)
+						r = g.measure(r, ini)
 					gc.collect()
 			else:
 				gid = 0
@@ -116,3 +123,12 @@ class QCircuit(object):
 		finally:
 			gc.collect()
 		return r
+
+def specialCompare(a, b):
+	same = len(a) == len(b)
+	if (same):
+		for i in range(len(a)):
+			if a[i] is not None and a[i] != b[i]:
+				same = False
+				break
+	return same

@@ -102,14 +102,23 @@ def TeleportationCircuit(save=True): # El qubit que va a ser teleportado. Aunque
 	qc.addLine(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
 	
 	qc1 = QCircuit("TAux1", save=False)
-	qc1.addLine(PauliZ())
+	qc1.addLine(PauliX())
 	
-	qc2 = QCircuit("TAux1", save=False)
-	qc2.addLine(PauliX())
+	qc2 = QCircuit("TAux2", save=False)
+	qc2.addLine(PauliZ())
 	
-	c1 = Condition([1, None, None], qc1)
-	c2 = Condition([None, 1, None], qc2)
-	m = Measure([1, 1, 0], conds=[c1, c2], remove=True)
+	c1 = Condition([None, 1, None], qc1)
+	c2 = Condition([1, None, None], qc2)
+	
+	def t1(r, m, i):
+		print ("Measured " + str(m))
+		exr = QRegistry(i)
+		exr.ApplyGate(Hadamard(1))
+		exr.ApplyGate(PhaseShift(np.pi/2))
+		print ("\nExpected result:\n", exr.state, "\nResult:\n", r.state)
+		print ("Assert: " + str(all((r.state == exr.state)[0])))
+	
+	m = Measure([1, 1, 0], tasks=[t1], conds=[c1, c2], remove=True)
 	
 	qc.addLine(m)
 	

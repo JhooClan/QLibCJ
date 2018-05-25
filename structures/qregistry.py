@@ -23,8 +23,6 @@ class QRegistry:
 			Normalize(qbit)
 			self.state = np.kron(self.state, qbit)
 		Normalize(self.state)
-		#if (kwargs.get('seed', None) != None):
-		#	rnd.seed(kwargs['seed'])
 
 	def Measure(self, msk, remove = False): # List of numbers with the QuBits that should be measured. 0 means not measuring that qubit, 1 otherwise. remove = True if you want to remove a QuBit from the registry after measuring
 		if (type(msk) != list or len(msk) != int(np.log2(self.state.size)) or \
