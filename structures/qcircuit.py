@@ -47,7 +47,7 @@ class Condition(object):
 		if t == Condition:
 			r = case.evaluate(qregistry, mresults)
 		elif t == QCircuit:
-			r = case.execute(qregistry)
+			r = case.executeOnce(qregistry)
 		elif t != type(None):
 			r = case(qregistry, mresults)
 		else:
@@ -85,13 +85,18 @@ class QCircuit(object):
 		finally:
 			gc.collect()
 	
-	def execute(self, qregistry): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
-		r = qregistry
+	def execute(self, qregistry, iterations = 1):
+		return [self.executeOnce(qregistry) for i in range(iterations)]
+	
+	def executeOnce(self, qregistry, iterations = 1): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
+		print (qregistry)
 		if type(qregistry) != QRegistry:
 			r = QRegistry(qregistry + self.ancilla)
 			ini = qregistry[:]
 		else:
+			r = QRegistry([0])
 			ini = qregistry.state[:]
+			r.state = ini[:]
 			if self.ancilla is not None and len(self.ancilla) > 0:
 				print (self.ancilla)
 				aux = QRegistry(self.ancilla)
