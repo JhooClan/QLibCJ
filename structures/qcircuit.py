@@ -9,6 +9,12 @@ class Measure(object):
 		self.tasks = tasks
 		self.remove = remove
 	
+	def __repr__(self):
+		return ["Measure" if i == 1 else "I" for i in self.mask]
+	
+	def __str__(self):
+		return self.__repr__()
+	
 	def mesToList(self, mresults):
 		lin = 0
 		mres = []
@@ -46,6 +52,9 @@ class Condition(object):
 		t = type(case)
 		if t == Condition:
 			r = case.evaluate(qregistry, mresults)
+		elif t == QGate:
+			r = qregistry
+			r.ApplyGate(case)
 		elif t == QCircuit:
 			r = case.executeOnce(qregistry)
 		elif t != type(None):
@@ -86,10 +95,12 @@ class QCircuit(object):
 			gc.collect()
 	
 	def execute(self, qregistry, iterations = 1):
-		return [self.executeOnce(qregistry) for i in range(iterations)]
+		sol = [self.executeOnce(qregistry) for i in range(iterations)]
+		if iterations == 1:
+			sol = sol[0]
+		return sol
 	
 	def executeOnce(self, qregistry, iterations = 1): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
-		print (qregistry)
 		if type(qregistry) != QRegistry:
 			r = QRegistry(qregistry + self.ancilla)
 			ini = qregistry[:]

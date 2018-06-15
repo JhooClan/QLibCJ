@@ -19,10 +19,10 @@ class QGate(object):
 		del self.m[key]
 	
 	def __repr__(self):
-		return self.m.__repr__()
+		return self.name
 	
 	def __str__(self):
-		return self.m.__str__()
+		return self.name
 	
 	def __lt__(self, other):
 		m = other

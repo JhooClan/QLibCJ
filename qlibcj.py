@@ -47,35 +47,13 @@ def PauliZ():
 	pz.addLine(m)
 	return pz
 
-def SqrtNOT(): # Square root of NOT gate, usually seen in its controlled form C-SqrtNOT. Sometimes called V gate.
+def SqrtNOT(): # Square root of NOT gate, usually seen in its controlled form C-√NOT. Sometimes called C-√X gate.
 	v = QGate("√NOT")
 	m = np.array([1, -1j, -1j, 1], dtype=complex)
 	m.shape = (2,2)
 	v.addLine(m)
 	v.setMult((1 + 1j)/2)
 	return v
-
-def SWAP(): # SWAP gate for 2 qubits
-	sw = QGate("SWAP")
-	m = np.zeros((4,4), dtype=complex)
-	m[0,0] = 1
-	m[1,2] = 1
-	m[2,1] = 1
-	m[3,3] = 1
-	sw.addLine(m)
-	return sw
-
-def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
-	sw = QGate("√SWAP")
-	m = np.zeros((4,4), dtype=complex)
-	m[0,0] = 1
-	m[1,1] = 0.5 * (1+1j)
-	m[1,2] = 0.5 * (1-1j)
-	m[2,1] = 0.5 * (1-1j)
-	m[2,2] = 0.5 * (1+1j)
-	m[3,3] = 1
-	sw.addLine(m)
-	return sw
 
 def ControlledU(gate): # Returns a controlled version of the given gate
 	g = gate
@@ -91,7 +69,51 @@ def ControlledU(gate): # Returns a controlled version of the given gate
 	return cu
 
 def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
-	return ControlledU(PauliX())
+	#return ControlledU(PauliX())
+	cn = QGate("C-NOT")
+	m = np.zeros((4,4), dtype=complex)
+	m[0,0] = 1
+	m[1,1] = 1
+	m[2,3] = 1
+	m[3,2] = 1
+	cn.addLine(m)
+	return cn
+
+def NOTC(): # Returns a CNOT gate for two QuBits, first QuBit objective and second one control
+	#return SWAP() @ CNOT() @ SWAP()
+	nc = QGate("NOT-C")
+	m = np.zeros((4,4), dtype=complex)
+	m[0,0] = 1
+	m[3,1] = 1
+	m[2,2] = 1
+	m[1,3] = 1
+	nc.addLine(m)
+	return nc
+
+def SWAP(): # SWAP gate for 2 qubits
+	sw = QGate("SWAP")
+	#m = np.zeros((4,4), dtype=complex)
+	#m[0,0] = 1
+	#m[1,2] = 1
+	#m[2,1] = 1
+	#m[3,3] = 1
+	#sw.addLine(m)
+	sw.addLine(CNOT())
+	sw.addLine(NOTC())
+	sw.addLine(CNOT())
+	return sw
+
+def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
+	sw = QGate("√SWAP")
+	m = np.zeros((4,4), dtype=complex)
+	m[0,0] = 1
+	m[1,1] = 0.5 * (1+1j)
+	m[1,2] = 0.5 * (1-1j)
+	m[2,1] = 0.5 * (1-1j)
+	m[2,2] = 0.5 * (1+1j)
+	m[3,3] = 1
+	sw.addLine(m)
+	return sw
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
 	''' # This does the same as the line below. Circuit with the implementation of Toffoli gate using SWAP, CNOT, Controlled-SNot and Controlled-SNot+
@@ -237,7 +259,7 @@ def hopfCoords(qbit):
 	alpha = qbit[0][0]
 	beta = qbit[0][1]
 	theta = np.arccos(alpha) * 2
-	print (theta)
+	# print (theta)
 	s = np.sin(theta/2)
 	if (s != 0):
 		phi = np.log(beta/np.sin(theta/2)) / 1j
