@@ -61,7 +61,7 @@ class QRegistry:
 		gate = getMatrix(gates[0])
 		for g in list(gates)[1:]:
 			gate = np.kron(gate, getMatrix(g))
-		self.state = np.dot(Bra(self.state), gate)
+		self.state = np.transpose(np.dot(gate, Ket(self.state)))
 	
 	def Collapse(self, qbit, measure, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. measure is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
 		max = 2**qbit
@@ -109,7 +109,9 @@ def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
 	b = v[:]
 	s = v.shape
 	if s[0] != 1:
-		b = np.transpose(b)
+		b = np.matrix.getH(b)
+	else:
+		b = np.conjugate(b)
 	return b
 
 def Ket(v): # Devuelve el QuBit pasado como parametro en forma de columna. |q>
