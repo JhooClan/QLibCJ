@@ -20,7 +20,7 @@ def DJAlgCircuit(size, U_f, save=True): # U_f es el oraculo, que debe tener x1..
 	c.addLine(U_f) # Se aplica el oraculo
 	c.addLine(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
 	
-	f = lambda list: print(all(i == 0 for i in list)) # Funcion que imprimira cierto tras realizar la medida si la funcion es constante
+	f = lambda v1, list, v2: print(all(i == 0 for i in list[:-1])) # Funcion que imprimira cierto tras realizar la medida si la funcion es constante
 	
 	c.addLine(Measure([1 for i in range(size - 1)] + [0], tasks=[f])) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 	return c
