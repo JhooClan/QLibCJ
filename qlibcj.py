@@ -175,7 +175,7 @@ def toComp(angle, sc=None): # Returns a complex number with module 1 and the spe
 	return res
 
 def PhaseShift(angle): # Phase shift (R) gate, rotates qubit with specified angle (in radians)
-	ps = np.array([1, 0, 0, toComp(angle)], dtype=complex)
+	ps = np.array([1, 0, 0, toComp(angle, 16)], dtype=complex)
 	ps.shape = (2,2)
 	g = QGate("R(" + str(angle) + ")")
 	return ps
@@ -255,16 +255,19 @@ def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
 	bjn.addLine(CNOT(), I(1))
 	return bjn
 
-def hopfCoords(qbit):
+def blochCoords(qbit):
 	alpha = qbit[0][0]
-	beta = qbit[0][1]
+	pcorr = cm.rect(1, -cm.phase(alpha))
+	alpha *= pcorr
+	alpha = alpha.real
+	beta = qbit[0][1] * pcorr
 	theta = np.arccos(alpha) * 2
-	# print (theta)
 	s = np.sin(theta/2)
 	if (s != 0):
-		phi = np.log(beta/np.sin(theta/2)) / 1j
+		phi = np.log(beta/s)/1j
+		phi = phi.real
 	else:
-		phi = 0j
+		phi = 0
 	return (theta, phi)
 
 def getTruthTable(gate, ancilla=None, garbage=0, iterations=1): # Prints the truth table of the given gate.
