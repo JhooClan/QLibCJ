@@ -15,7 +15,7 @@ class Measure(object):
 	def __str__(self):
 		return self.__repr__()
 	
-	def mesToList(self, mresults):
+	def _mesToList(self, mresults):
 		lin = 0
 		mres = []
 		for m in self.mask:
@@ -26,14 +26,14 @@ class Measure(object):
 			mres.append(tap)
 		return mres
 	
-	def measure(self, qregistry, initialD):
+	def Check(self, qregistry):
 		res = qregistry.Measure(self.mask, remove=self.remove)
-		res = self.mesToList(res)
+		res = self._mesToList(res)
 		r = qregistry
 		for cond in self.conds:
-			r = cond.evaluate(r, res)
+			r = cond.Evaluate(r, res)
 		for task in self.tasks:
-			task(r, res, initialD)
+			task(r, res)
 		return r
 		
 
@@ -45,18 +45,18 @@ class Condition(object):
 		self.ifcase = ifcase
 		self.elcase = elcase
 	
-	def evaluate(self, qregistry, mresults):
+	def Evaluate(self, qregistry, mresults):
 		case = self.elcase
-		if specialCompare(self.cond, mresults):
+		if _specialCompare(self.cond, mresults):
 			case = self.ifcase
 		t = type(case)
 		if t == Condition:
-			r = case.evaluate(qregistry, mresults)
+			r = case.Evaluate(qregistry, mresults)
 		elif t == QGate:
 			r = qregistry
 			r.ApplyGate(case)
 		elif t == QCircuit:
-			r = case.executeOnce(qregistry)
+			r = case._executeOnce(qregistry)
 		elif t != type(None):
 			r = case(qregistry, mresults)
 		else:
@@ -73,7 +73,7 @@ class QCircuit(object):
 		self.ancilla = ancilla
 		self.save = save
 	
-	def addLine(self, *args):
+	def AddLine(self, *args):
 		try:
 			if self.save:
 				self.lines.append(list(args))
@@ -84,7 +84,7 @@ class QCircuit(object):
 					for gate in list(args)[1:]:
 						aux = np.kron(aux, getMatrix(gate))
 					del args
-					self.matrix[mlen] = np.dot(self.matrix[mlen], aux)
+					self.matrix[mlen] = np.dot(aux, self.matrix[mlen])
 					del aux
 					if self.plan[-1] != 0:
 						self.plan.append(0)
@@ -94,13 +94,7 @@ class QCircuit(object):
 		finally:
 			gc.collect()
 	
-	def execute(self, qregistry, iterations = 1):
-		sol = [self.executeOnce(qregistry) for i in range(iterations)]
-		if iterations == 1:
-			sol = sol[0]
-		return sol
-	
-	def executeOnce(self, qregistry, iterations = 1): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
+	def _executeOnce(self, qregistry, iterations = 1): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
 		if type(qregistry) != QRegistry:
 			r = QRegistry(qregistry + self.ancilla)
 			ini = qregistry[:]
@@ -123,7 +117,7 @@ class QCircuit(object):
 						r.ApplyGate(g)
 						del g
 					else:
-						r = g.measure(r, ini)
+						r = g.Check(r)
 					gc.collect()
 			else:
 				gid = 0
@@ -133,14 +127,20 @@ class QCircuit(object):
 						r.ApplyGate(self.matrix[gid])
 						gid += 1
 					else:
-						r = self.measure[mid].measure(r)
+						r = self.measure[mid].Check(r)
 						mid += 1
 					gc.collect()
 		finally:
 			gc.collect()
 		return r
+	
+	def Execute(self, qregistry, iterations = 1):
+		sol = [self._executeOnce(qregistry) for i in range(iterations)]
+		if iterations == 1:
+			sol = sol[0]
+		return sol
 
-def specialCompare(a, b):
+def _specialCompare(a, b):
 	same = len(a) == len(b)
 	if (same):
 		for i in range(len(a)):

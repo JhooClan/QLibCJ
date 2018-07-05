@@ -65,7 +65,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__add__(m))
+		sol.AddLine(self.m.__add__(m))
 		return sol
 	
 	def __sub__(self, other):
@@ -73,7 +73,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__sub__(m))
+		sol.AddLine(self.m.__sub__(m))
 		return sol
 	
 	def __mod__(self, other):
@@ -81,7 +81,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__mod__(m))
+		sol.AddLine(self.m.__mod__(m))
 		return sol
 	
 	def __mul__(self, other):
@@ -89,7 +89,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__mul__(m))
+		sol.AddLine(self.m.__mul__(m))
 		return sol
 	
 	def __rmul__(self, other):
@@ -97,7 +97,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__rmul__(m))
+		sol.AddLine(self.m.__rmul__(m))
 		return sol
 	
 	def __imul__(self, other):
@@ -105,7 +105,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(self.m.__rmul__(m))
+		sol.AddLine(self.m.__rmul__(m))
 		return sol
 	
 	def __matmul__(self, other):
@@ -113,7 +113,7 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(np.dot(self.m, m))
+		sol.AddLine(np.dot(self.m, m))
 		return sol
 	
 	def __pow__(self, other):
@@ -121,10 +121,10 @@ class QGate(object):
 		if type(other) == QGate:
 			m = other.m
 		sol = QGate()
-		sol.addLine(np.kron(self.m, m))
+		sol.AddLine(np.kron(self.m, m))
 		return sol
 	
-	def addLine(self, *args):
+	def AddLine(self, *args):
 		self.lines.append(list(args))
 		if self.simple and (len(list(args)) > 1 or len(self.lines) > 1):
 			self.simple = False
@@ -135,18 +135,18 @@ class QGate(object):
 				g = gate.m
 			aux = np.kron(aux, g)
 			gc.collect()
-		self.m = np.dot(self.m, aux)
+		self.m = np.dot(aux, self.m)
 		gc.collect()
 	
-	def setMult(self, mult):
+	def SetMult(self, mult):
 		self.m *= mult/self.mult
 		self.mult = mult
 	
-	def addMult(self, mult):
+	def AddMult(self, mult):
 		self.m *= mult
 		self.mult *= mult
 	
-	def setName(self, name):
+	def SetName(self, name):
 		self.name = name
 
 def I(n): # Returns Identity Matrix for the specified number of QuBits
@@ -155,14 +155,14 @@ def I(n): # Returns Identity Matrix for the specified number of QuBits
 	#	IM = np.kron(IM, I(n - 1))
 	return np.eye(2**n, dtype=complex)
 
-def getMatrix(gate):
+def _getMatrix(gate):
 	m = gate
 	if type(gate) == QGate:
 		m = gate.m
 	return m
 
 def UnitaryMatrix(mat, decimals=10):
-	mustbei = np.around(np.dot(getMatrix(mat), getMatrix(Dagger(mat))), decimals=decimals)
+	mustbei = np.around(np.dot(_getMatrix(mat), _getMatrix(Dagger(mat))), decimals=decimals)
 	return (mustbei == I(int(np.log2(mustbei.shape[0])))).all()
 
 def NormalizeGate(mat):
@@ -175,32 +175,32 @@ def NormalizeGate(mat):
 def Transpose(gate): # Returns the Transpose of the given matrix
 	if type(gate) == QGate:
 		t = QGate(gate.name + "T")
-		t.addLine(np.matrix.transpose(gate.m))
+		t.AddLine(np.matrix.transpose(gate.m))
 	else:
 		t = QGate("UT")
-		t.addLine(np.matrix.transpose(gate))
+		t.AddLine(np.matrix.transpose(gate))
 	return t
 
 def Dagger(gate): # Returns the Hermitian Conjugate or Conjugate Transpose of the given matrix
 	if type(gate) == QGate:
 		t = QGate(gate.name + "†")
 		if gate.simple:
-			t.addLine(Dagger(gate.m))
+			t.AddLine(Dagger(gate.m))
 		else:
 			lines = gate.lines[::-1]
 			for line in lines:
-				t.addLine(*[Dagger(g).m for g in line])
-			t.setMult(gate.mult)
+				t.AddLine(*[Dagger(g).m for g in line])
+			t.SetMult(gate.mult)
 	else:
 		t = QGate("U†")
-		t.addLine(np.matrix.getH(gate))
+		t.AddLine(np.matrix.getH(gate))
 	return t
 
 def Invert(gate): # Returns the inverse of the given matrix
 	if type(gate) == QGate:
 		t = QGate(gate.name + "-¹")
-		t.addLine(np.linalg.inv(gate.m))
+		t.AddLine(np.linalg.inv(gate.m))
 	else:
 		t = QGate("U-¹")
-		t.addLine(np.linalg.inv(gate))
+		t.AddLine(np.linalg.inv(gate))
 	return t

@@ -35,7 +35,7 @@ class QRegistry:
 		tq = int(np.log2(self.state.size))
 		if (not all(num < tq and num > -1 for num in mask)):
 			raise ValueError('Out of range')
-		measure = []
+		mes = []
 		for qbit in mask:
 			r = rnd.random()
 			p = 0
@@ -53,9 +53,9 @@ class QRegistry:
 				me = 0
 			else:
 				me = 1
-			measure.append(me)
+			mes.append(me)
 			self.Collapse((tq - (qbit + 1)), me, remove)
-		return measure
+		return mes
 
 	def ApplyGate(self, *gates): # Applies a quantum gate to the registry.
 		gate = getMatrix(gates[0])
@@ -63,10 +63,10 @@ class QRegistry:
 			gate = np.kron(gate, getMatrix(g))
 		self.state = np.transpose(np.dot(gate, Ket(self.state)))
 	
-	def Collapse(self, qbit, measure, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. measure is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
+	def Collapse(self, qbit, mes, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. mes is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
 		max = 2**qbit
 		cnt = 0
-		rdy = measure == 1
+		rdy = mes == 1
 		mfd = []
 		for i in range(0, self.state.size):
 			if (cnt == max):

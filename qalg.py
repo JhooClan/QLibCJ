@@ -8,7 +8,7 @@ def DJAlg(size, U_f, **kwargs): # U_f es el oraculo, que debe tener x1..xn e y c
 	r.ApplyGate(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
 	return r.Measure([1 for i in range(size - 1)] + [0]) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 
-def exampleDJCircuit(size, U_f, **kwargs):
+def ExampleDJCircuit(size, U_f, **kwargs):
 	rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
 	c = DJAlgCircuit(size, U_f, save=kwargs.get('save', True))
 	
@@ -16,13 +16,13 @@ def exampleDJCircuit(size, U_f, **kwargs):
 
 def DJAlgCircuit(size, U_f, save=True): # U_f es el oraculo, que debe tener x1..xn e y como qubits. Tras aplicarlo el qubit y debe valer f(x1..xn) XOR y. El argumento size es n + 1, donde n es el numero de bits de entrada de f.
 	c = QCircuit("Deutsch-Josza Algorithm", save=save, ancilla=[1]) # El ultimo QuBit al ejecutar el algoritmo es de ancilla, con su valor a 1
-	c.addLine(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
-	c.addLine(U_f) # Se aplica el oraculo
-	c.addLine(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
+	c.AddLine(Hadamard(size)) # Se aplica una compuerta hadamard a todos los qubits
+	c.AddLine(U_f) # Se aplica el oraculo
+	c.AddLine(Hadamard(size - 1), I(1)) # Se aplica una puerta Hadamard a todos los qubits excepto al ultimo
 	
-	f = lambda v1, list, v2: print(all(i == 0 for i in list[:-1])) # Funcion que imprimira cierto tras realizar la medida si la funcion es constante
+	f = lambda _, l: print(all(i == 0 for i in l[:-1])) # Funcion que imprimira cierto tras realizar la medida si la funcion es constante
 	
-	c.addLine(Measure([1 for i in range(size - 1)] + [0], tasks=[f])) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
+	c.AddLine(Measure([1 for i in range(size - 1)] + [0], tasks=[f])) # Se miden los qubit x, si es igual a 0 la funcion es constante. En caso contrario no lo es.
 	return c
 
 '''
@@ -90,39 +90,46 @@ def Teleportation(qbit, **kwargs): # El qubit que va a ser teleportado. Aunque e
 	print ("Assert: " + str(r.state == er.state))
 	return r # Se devuelve el registro obtenido tras aplicar el algoritmo.
 
-def TeleportationCircuit(save=True): # El qubit que va a ser teleportado. Aunque en un computador cuantico real no es posible ver el valor de un qubit sin que colapse, al ser un simulador se puede. Puede especificarse semilla con seed = <seed>.
+def TeleportationCircuit(gate, save=True): # Recibe como argumento lo que se va a ejecutar sobre el primer QuBit despues de hacer el estado de Bell con los dos últimos.
 	qc = QCircuit("Teleportation", save=save, ancilla=[0, 0])
-	qc.addLine(I(1), Hadamard(1), I(1))
-	qc.addLine(I(1), CNOT())
+	qc.AddLine(I(1), Hadamard(1), I(1))
+	qc.AddLine(I(1), CNOT())
 	# Aqui es donde trabajamos con el qubit Q que queremos enviar posteriormente. En este caso de ejemplo le vamos a aplicar Hadamard y despues un cambio de fase de pi/2
-	qc.addLine(Hadamard(1), I(2))
-	qc.addLine(PhaseShift(np.pi/2), I(2))
+	qc.AddLine(gate, I(2))
 	# Una vez terminado todo lo que queremos hacerle al QuBit, procedemos a preparar el envio
-	qc.addLine(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
-	qc.addLine(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
+	qc.AddLine(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
+	qc.AddLine(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
 	
-	qc1 = QCircuit("TAux1", save=False)
-	qc1.addLine(PauliX())
+	qc1 = QCircuit("TAux1", save=save)
+	qc1.AddLine(PauliX())
 	
-	qc2 = QCircuit("TAux2", save=False)
-	qc2.addLine(PauliZ())
+	qc2 = QCircuit("TAux2", save=save)
+	qc2.AddLine(PauliZ())
 	
 	c1 = Condition([None, 1, None], qc1)
 	c2 = Condition([1, None, None], qc2)
 	
-	def t1(r, m, i):
-		print ("Measured " + str(m))
-		exr = QRegistry(i)
-		exr.ApplyGate(Hadamard(1))
-		exr.ApplyGate(PhaseShift(np.pi/2))
-		print ("\nExpected result:\n", exr.state, "\nResult:\n", r.state)
-		print ("Assert: " + str(all((r.state == exr.state)[0])))
+	m = Measure([1, 1, 0], conds=[c1, c2], remove=True)
 	
-	m = Measure([1, 1, 0], tasks=[t1], conds=[c1, c2], remove=True)
+	qc.AddLine(m)
 	
-	qc.addLine(m)
+	return qc # Se devuelve el circuito.
+
+def ExampleTC(value, gate, **kwargs): # El valor debe ser 0 o 1, valor inicial del QuBit a teleportar. Gate es la puerta que se va a aplicar sobre el QuBit a teleportar.
+	rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.
 	
-	return qc # Se devuelve el registro obtenido tras aplicar el algoritmo.
+	# Diseñamos la puerta que se va a aplicar sobre el QuBit
+	#g = QGate()
+	#g.AddLine(Hadamard(1))
+	#g.AddLine(PhaseShift(np.pi/2))
+	
+	c = TeleportationCircuit(gate, save=kwargs.get('save', True))
+	
+	r = c.execute([value]) # Se ejecuta el circuito
+	exr = QRegistry([value])
+	exr.ApplyGate(gate)
+	print ("\nExpected result:\n", exr.state, "\nResult:\n", r.state)
+	print ("Assert: " + str(all((r.state == exr.state)[0])))
 
 def TwoBitSubstractor(nums, **kwargs): # Se pasa como parametro los dos numeros binarios a restar como [A0, A1, B0, B1]. Devuelve el resultado en los qubit de mayor peso y en el tercer qubit indica si ha habido overflow
 	rnd.seed(kwargs.get('seed', None)) # Para asegurar la repetibilidad fijamos la semilla antes del experimento.

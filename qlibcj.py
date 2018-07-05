@@ -22,7 +22,7 @@ def hMat(n): # Devuelve una matriz que al ser multiplicada por 1/sqrt(2^n) resul
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
 	H = QGate("H")
-	H.addLine(hMat(n))
+	H.AddLine(hMat(n))
 	H.setMult(1 / np.sqrt(2**n))
 	return H
 
@@ -30,28 +30,28 @@ def PauliX(): # Also known as NOT
 	px = QGate("NOT")
 	m = np.array([0,1,1,0], dtype=complex)
 	m.shape = (2,2)
-	px.addLine(m)
+	px.AddLine(m)
 	return px
 
 def PauliY():
 	py = QGate("Y")
 	m = np.array([0,-1j,1j,0], dtype=complex)
 	m.shape = (2,2)
-	py.addLine(m)
+	py.AddLine(m)
 	return py
 
 def PauliZ():
 	pz = QGate("Z")
 	m = np.array([1,0,0,-1], dtype=complex)
 	m.shape = (2,2)
-	pz.addLine(m)
+	pz.AddLine(m)
 	return pz
 
 def SqrtNOT(): # Square root of NOT gate, usually seen in its controlled form C-√NOT. Sometimes called C-√X gate.
 	v = QGate("√NOT")
 	m = np.array([1, -1j, -1j, 1], dtype=complex)
 	m.shape = (2,2)
-	v.addLine(m)
+	v.AddLine(m)
 	v.setMult((1 + 1j)/2)
 	return v
 
@@ -65,7 +65,7 @@ def ControlledU(gate): # Returns a controlled version of the given gate
 	m = np.eye(gdim*2, dtype=complex)
 	m[gdim:,gdim:] = g
 	cu = QGate("C-" + name)
-	cu.addLine(m)
+	cu.AddLine(m)
 	return cu
 
 def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
@@ -76,7 +76,7 @@ def CNOT(): # Returns a CNOT gate for two QuBits, also called Feynman gate
 	m[1,1] = 1
 	m[2,3] = 1
 	m[3,2] = 1
-	cn.addLine(m)
+	cn.AddLine(m)
 	return cn
 
 def NOTC(): # Returns a CNOT gate for two QuBits, first QuBit objective and second one control
@@ -87,7 +87,7 @@ def NOTC(): # Returns a CNOT gate for two QuBits, first QuBit objective and seco
 	m[3,1] = 1
 	m[2,2] = 1
 	m[1,3] = 1
-	nc.addLine(m)
+	nc.AddLine(m)
 	return nc
 
 def SWAP(): # SWAP gate for 2 qubits
@@ -97,10 +97,10 @@ def SWAP(): # SWAP gate for 2 qubits
 	#m[1,2] = 1
 	#m[2,1] = 1
 	#m[3,3] = 1
-	#sw.addLine(m)
-	sw.addLine(CNOT())
-	sw.addLine(NOTC())
-	sw.addLine(CNOT())
+	#sw.AddLine(m)
+	sw.AddLine(CNOT())
+	sw.AddLine(NOTC())
+	sw.AddLine(CNOT())
 	return sw
 
 def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
@@ -112,7 +112,7 @@ def SqrtSWAP(): # Square root of SWAP gate for 2 qubits
 	m[2,1] = 0.5 * (1-1j)
 	m[2,2] = 0.5 * (1+1j)
 	m[3,3] = 1
-	sw.addLine(m)
+	sw.AddLine(m)
 	return sw
 
 def Toffoli(): # Returns a CCNOT gate for three QuBits. A, B, C -> P = A, Q = B, R = AB XOR C.
@@ -141,7 +141,7 @@ def Deutsch(angle): # Returns Deutsh gate with specified angle. D(pi/2) = Toffol
 	d[7,6] = san
 	d[7,7] = can * 1j
 	g = QGate("D-" + str(angle))
-	g.addLine(d)
+	g.AddLine(d)
 	return g
 
 def getSC(number): # Gets the number of significative ciphers of a given number
@@ -184,75 +184,75 @@ def Peres(): # A, B, C -> P = A, Q = A XOR B, R = AB XOR C. Peres gate.
 	''' # Implementation of Peres gate with smaller gates.
 	# Gates needed (without control SWAPs): 4
 	p = QGate("Peres")
-	p.addLine(SWAP(), I(1))
-	p.addLine(I(1), ControlledU(SqrtNOT()))
-	p.addLine(SWAP(), I(1))
-	p.addLine(I(1), ControlledU(SqrtNOT()))
-	p.addLine(CNOT(), I(1))
-	p.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	p.AddLine(SWAP(), I(1))
+	p.AddLine(I(1), ControlledU(SqrtNOT()))
+	p.AddLine(SWAP(), I(1))
+	p.AddLine(I(1), ControlledU(SqrtNOT()))
+	p.AddLine(CNOT(), I(1))
+	p.AddLine(I(1), ControlledU(Dagger(SqrtNOT())))
 	return p
 	'''
 	p = QGate("Peres")
-	p.addLine(Toffoli())
-	p.addLine(CNOT(), I(1))
+	p.AddLine(Toffoli())
+	p.AddLine(CNOT(), I(1))
 	return p
 
 def R(): # A, B, C -> P = A XOR B, Q = A, R = AB XOR ¬C. R gate.
 	# Optimized implementation with smaller gates
 	# Gates needed (without control SWAPs): 6
 	r = QGate("R")
-	r.addLine(SWAP(), PauliX())
-	r.addLine(I(1), ControlledU(SqrtNOT()))
-	r.addLine(SWAP(), I(1))
-	r.addLine(I(1), ControlledU(SqrtNOT()))
-	r.addLine(CNOT(), I(1))
-	r.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
-	r.addLine(SWAP(), I(1))
+	r.AddLine(SWAP(), PauliX())
+	r.AddLine(I(1), ControlledU(SqrtNOT()))
+	r.AddLine(SWAP(), I(1))
+	r.AddLine(I(1), ControlledU(SqrtNOT()))
+	r.AddLine(CNOT(), I(1))
+	r.AddLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	r.AddLine(SWAP(), I(1))
 	return r
 
 def TR(): # A, B, C -> P = A, Q = A XOR B, R = A¬B XOR C. TR gate.
 	# Implementation of TR gate with smaller gates.
 	# Gates needed (without control SWAPs): 6
 	tr = QGate("TR")
-	tr.addLine(I(1), PauliX(), I(1))
-	tr.addLine(SWAP(), I(1))
-	tr.addLine(I(1), ControlledU(SqrtNOT()))
-	tr.addLine(SWAP(), I(1))
-	tr.addLine(I(1), ControlledU(SqrtNOT()))
-	tr.addLine(CNOT(), I(1))
-	tr.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
-	tr.addLine(I(1), PauliX(), I(1))
+	tr.AddLine(I(1), PauliX(), I(1))
+	tr.AddLine(SWAP(), I(1))
+	tr.AddLine(I(1), ControlledU(SqrtNOT()))
+	tr.AddLine(SWAP(), I(1))
+	tr.AddLine(I(1), ControlledU(SqrtNOT()))
+	tr.AddLine(CNOT(), I(1))
+	tr.AddLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	tr.AddLine(I(1), PauliX(), I(1))
 	return tr
 
 def URG(): # A, B, C -> P = (A+B) XOR C, Q = B, R = AB XOR C.
 	# Implementation of URG gate with smaller gates.
 	# Gates needed (without control SWAPs): 8
 	urg = QGate("URG")
-	urg.addLine(I(1), ControlledU(SqrtNOT()))
-	urg.addLine(SWAP(), I(1))
-	urg.addLine(I(1), ControlledU(SqrtNOT()))
-	urg.addLine(CNOT(), I(1))
-	urg.addLine(I(1), ControlledU(Dagger(SqrtNOT())))
-	urg.addLine(CNOT(), I(1))
-	urg.addLine(I(1), SWAP())
-	urg.addLine(CNOT(), I(1))
-	urg.addLine(I(1), CNOT())
-	urg.addLine(CNOT(), I(1))
-	urg.addLine(I(1), SWAP())
-	urg.addLine(SWAP(), I(1))
+	urg.AddLine(I(1), ControlledU(SqrtNOT()))
+	urg.AddLine(SWAP(), I(1))
+	urg.AddLine(I(1), ControlledU(SqrtNOT()))
+	urg.AddLine(CNOT(), I(1))
+	urg.AddLine(I(1), ControlledU(Dagger(SqrtNOT())))
+	urg.AddLine(CNOT(), I(1))
+	urg.AddLine(I(1), SWAP())
+	urg.AddLine(CNOT(), I(1))
+	urg.AddLine(I(1), CNOT())
+	urg.AddLine(CNOT(), I(1))
+	urg.AddLine(I(1), SWAP())
+	urg.AddLine(SWAP(), I(1))
 	return urg
 
 def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
 	# Implementation of TR gate with smaller gates.
 	# Gates needed (without control SWAPs): 5
 	bjn = QGate("BJN")
-	bjn.addLine(SWAP(), I(1))
-	bjn.addLine(I(1), ControlledU(SqrtNOT()))
-	bjn.addLine(SWAP(), I(1))
-	bjn.addLine(I(1), ControlledU(SqrtNOT()))
-	bjn.addLine(CNOT(), I(1))
-	bjn.addLine(I(1), ControlledU(SqrtNOT()))
-	bjn.addLine(CNOT(), I(1))
+	bjn.AddLine(SWAP(), I(1))
+	bjn.AddLine(I(1), ControlledU(SqrtNOT()))
+	bjn.AddLine(SWAP(), I(1))
+	bjn.AddLine(I(1), ControlledU(SqrtNOT()))
+	bjn.AddLine(CNOT(), I(1))
+	bjn.AddLine(I(1), ControlledU(SqrtNOT()))
+	bjn.AddLine(CNOT(), I(1))
 	return bjn
 
 def blochCoords(qbit):
@@ -267,7 +267,7 @@ def blochCoords(qbit):
 		phi = np.log(beta/s)/1j
 		phi = phi.real
 	else:
-		phi = 0
+		phi = 0.
 	return (theta, phi)
 
 def getTruthTable(gate, ancilla=None, garbage=0, iterations=1): # Prints the truth table of the given gate.
@@ -302,24 +302,24 @@ def QEq(q1, q2):
 
 def HalfSubstractor(): # A, B, 0 -> P = A-B, Q = Borrow, R = B = Garbage
 	hs = QGate("Half Substractor")
-	hs.addLine(SWAP(), I(1))
-	hs.addLine(TR())
-	hs.addLine(SWAP(), I(1))
-	hs.addLine(I(1), SWAP())
+	hs.AddLine(SWAP(), I(1))
+	hs.AddLine(TR())
+	hs.AddLine(SWAP(), I(1))
+	hs.AddLine(I(1), SWAP())
 	return hs
 
 def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage, S = B1B2 = Garbage, T = Bin = Garbage, U = B = Garbage
 	# Can be used as a comparator. Q will be 0 if A>=B, 1 otherwise.
 	fs = QGate("Substractor")
-	fs.addLine(I(2), SWAP(), I(2))
-	fs.addLine(HalfSubstractor(), I(3))
-	fs.addLine(I(2), SWAP(), I(2))
-	fs.addLine(I(1), SWAP(), SWAP(), I(1))
-	fs.addLine(I(2), SWAP(), SWAP())
-	fs.addLine(HalfSubstractor(), I(3))
-	fs.addLine(I(2), SWAP(), I(2))
-	fs.addLine(I(3), SWAP(), I(1))
-	fs.addLine(I(1), URG(), I(2))
+	fs.AddLine(I(2), SWAP(), I(2))
+	fs.AddLine(HalfSubstractor(), I(3))
+	fs.AddLine(I(2), SWAP(), I(2))
+	fs.AddLine(I(1), SWAP(), SWAP(), I(1))
+	fs.AddLine(I(2), SWAP(), SWAP())
+	fs.AddLine(HalfSubstractor(), I(3))
+	fs.AddLine(I(2), SWAP(), I(2))
+	fs.AddLine(I(3), SWAP(), I(1))
+	fs.AddLine(I(1), URG(), I(2))
 	return fs
 
 
@@ -333,7 +333,7 @@ def RUnity(m, rc = 14):
 	ru = np.eye(2, dtype=complex)
 	ru[1,1] = nroot(m, rc)
 	g = QGate("RU" + str(m))
-	g.addLine(ru)
+	g.AddLine(ru)
 	return g
 
 def QFT(size, rc = 14):
