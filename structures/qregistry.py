@@ -1,7 +1,7 @@
 import cmath as cm
 import numpy as np
 import random as rnd
-from structures.qgate import getMatrix
+from structures.qgate import _getMatrix
 
 class QRegistry:
 	def __init__(self, qbits, **kwargs):	# QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
@@ -58,9 +58,9 @@ class QRegistry:
 		return mes
 
 	def ApplyGate(self, *gates): # Applies a quantum gate to the registry.
-		gate = getMatrix(gates[0])
+		gate = _getMatrix(gates[0])
 		for g in list(gates)[1:]:
-			gate = np.kron(gate, getMatrix(g))
+			gate = np.kron(gate, _getMatrix(g))
 		self.state = np.transpose(np.dot(gate, Ket(self.state)))
 	
 	def Collapse(self, qbit, mes, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. mes is the value obtained when measuring it. remove indicates whether it should be removed from the registry.

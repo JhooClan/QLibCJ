@@ -13,17 +13,17 @@ from structures.qcircuit import *
 # El producto Kronecker de A y B esta definido con np.kron(A,B)
 
 
-def hMat(n): # Devuelve una matriz que al ser multiplicada por 1/sqrt(2^n) resulta en la puerta Hadamard para n bits
+def _hMat(n): # Devuelve una matriz que al ser multiplicada por 1/sqrt(2^n) resulta en la puerta Hadamard para n bits
 	H = np.ones((2,2), dtype=complex)
 	H[1,1] = -1
 	if n > 1:
-		H = np.kron(H, hMat(n - 1))
+		H = np.kron(H, _hMat(n - 1))
 	return H
 
 def Hadamard(n): # Devuelve una puerta Hadamard para n QuBits
 	H = QGate("H")
-	H.AddLine(hMat(n))
-	H.setMult(1 / np.sqrt(2**n))
+	H.AddLine(_hMat(n))
+	H.SetMult(1 / np.sqrt(2**n))
 	return H
 
 def PauliX(): # Also known as NOT
@@ -52,7 +52,7 @@ def SqrtNOT(): # Square root of NOT gate, usually seen in its controlled form C-
 	m = np.array([1, -1j, -1j, 1], dtype=complex)
 	m.shape = (2,2)
 	v.AddLine(m)
-	v.setMult((1 + 1j)/2)
+	v.SetMult((1 + 1j)/2)
 	return v
 
 def ControlledU(gate): # Returns a controlled version of the given gate
@@ -321,8 +321,6 @@ def Substractor(): # A, B, Bin, 0, 0, 0 -> P = A-B, Q = Borrow, R = B1 = Garbage
 	fs.AddLine(I(3), SWAP(), I(1))
 	fs.AddLine(I(1), URG(), I(2))
 	return fs
-
-
 
 # Function that returns the 2^nth root of the unity
 def nroot(n, rc = 14): # Rounds to 14 decimal places by default

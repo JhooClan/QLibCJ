@@ -1,4 +1,4 @@
-from structures.qgate import QGate
+from structures.qgate import QGate, _getMatrix
 from structures.qregistry import *
 import gc
 
@@ -80,9 +80,9 @@ class QCircuit(object):
 			else:
 				if type(args[0]) != Measure:
 					mlen = len(self.measure)
-					aux = getMatrix(args[0])
+					aux = _getMatrix(args[0])
 					for gate in list(args)[1:]:
-						aux = np.kron(aux, getMatrix(gate))
+						aux = np.kron(aux, _getMatrix(gate))
 					del args
 					self.matrix[mlen] = np.dot(aux, self.matrix[mlen])
 					del aux
@@ -111,9 +111,9 @@ class QCircuit(object):
 				for line in self.lines:
 					g = line[0]
 					if type(g) != Measure:
-						g = getMatrix(g)
+						g = _getMatrix(g)
 						for gate in line[1:]:
-							g = np.kron(g, getMatrix(gate))
+							g = np.kron(g, _getMatrix(gate))
 						r.ApplyGate(g)
 						del g
 					else:
