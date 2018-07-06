@@ -94,7 +94,7 @@ def TeleportationCircuit(gate, save=True): # Recibe como argumento lo que se va 
 	qc = QCircuit("Teleportation", save=save, ancilla=[0, 0])
 	qc.AddLine(I(1), Hadamard(1), I(1))
 	qc.AddLine(I(1), CNOT())
-	# Aqui es donde trabajamos con el qubit Q que queremos enviar posteriormente. En este caso de ejemplo le vamos a aplicar Hadamard y despues un cambio de fase de pi/2
+	# Aqui es donde trabajamos con el qubit Q que queremos enviar posteriormente. Se le aplica la puerta pasada como parámetro
 	qc.AddLine(gate, I(2))
 	# Una vez terminado todo lo que queremos hacerle al QuBit, procedemos a preparar el envio
 	qc.AddLine(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).

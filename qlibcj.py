@@ -255,7 +255,7 @@ def BJN(): # A, B, C -> P = A, Q = B, R = (A+B) XOR C. BJN gate.
 	bjn.AddLine(CNOT(), I(1))
 	return bjn
 
-def blochCoords(qbit):
+def BlochCoords(qbit):
 	alpha = qbit[0][0]
 	pcorr = cm.rect(1, -cm.phase(alpha))
 	alpha *= pcorr
