@@ -100,14 +100,8 @@ def TeleportationCircuit(gate, save=True): # Recibe como argumento lo que se va 
 	qc.AddLine(CNOT(), I(1)) # Se aplica una puerta C-NOT sobre Q (control) y B (objetivo).
 	qc.AddLine(Hadamard(1), I(2)) # Se aplica una puerta Hadamard sobre Q.
 	
-	qc1 = QCircuit("TAux1", save=save)
-	qc1.AddLine(PauliX())
-	
-	qc2 = QCircuit("TAux2", save=save)
-	qc2.AddLine(PauliZ())
-	
-	c1 = Condition([None, 1, None], qc1)
-	c2 = Condition([1, None, None], qc2)
+	c1 = Condition([None, 1, None], PauliX())
+	c2 = Condition([1, None, None], PauliZ())
 	
 	m = Measure([1, 1, 0], conds=[c1, c2], remove=True)
 	
