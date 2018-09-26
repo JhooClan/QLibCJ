@@ -4,27 +4,14 @@ import random as rnd
 from structures.qgate import _getMatrix
 
 class QRegistry:
-	def __init__(self, qbits, **kwargs):	# QuBit list. Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
-		if (type(qbits) != list or \
-			not qbits or \
-			#not all(type(qbit) == np.ndarray and \
-			#		qbit.shape == (1,2) and \
-			#		qbit.dtype == 'complex128' for qbit in qbits)):
-			not all(type(qbit) == type(0) and \
-					(qbit == 0 or qbit == 1) for qbit in qbits)):
-			raise ValueError('Impossible QuBit Registry')
-		#qbs = qbits[:]
-		qbs = [QOne() if i else QZero() for i in qbits]
+	def __init__(self, nqbits, **kwargs):
+		# nqbits -> number of QuBits in the registry.
+		# Seed for the Pseudo Random Number Generation can be specified with seed = <seed> as an argument.
+		self.state = np.zeros(2**nqbits, dtype=complex)
+		self.state[0] = 1
+		self.state.shape = (1, 2**nqbits)
 
-		self.state = qbs[0]
-		Normalize(self.state)
-		del qbs[0]
-		for qbit in qbs:
-			Normalize(qbit)
-			self.state = np.kron(self.state, qbit)
-		Normalize(self.state)
-
-	def Measure(self, msk, remove = False): # List of numbers with the QuBits that should be measured. 0 means not measuring that qubit, 1 otherwise. remove = True if you want to remove a QuBit from the registry after measuring
+	def measure(self, msk, remove = False): # List of numbers with the QuBits that should be measured. 0 means not measuring that qubit, 1 otherwise. remove = True if you want to remove a QuBit from the registry after measuring
 		if (type(msk) != list or len(msk) != int(np.log2(self.state.size)) or \
 			not all(type(num) == int and (num == 0 or num == 1) for num in msk)):
 			raise ValueError('Not valid mask')
@@ -54,16 +41,16 @@ class QRegistry:
 			else:
 				me = 1
 			mes.append(me)
-			self.Collapse((tq - (qbit + 1)), me, remove)
+			self.collapse((tq - (qbit + 1)), me, remove)
 		return mes
 
-	def ApplyGate(self, *gates): # Applies a quantum gate to the registry.
+	def applyGate(self, *gates): # Applies a quantum gate to the registry.
 		gate = _getMatrix(gates[0])
 		for g in list(gates)[1:]:
 			gate = np.kron(gate, _getMatrix(g))
-		self.state = np.transpose(np.dot(gate, Ket(self.state)))
-	
-	def Collapse(self, qbit, mes, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. mes is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
+		self.state = np.transpose(np.dot(gate, ket(self.state)))
+
+	def collapse(self, qbit, mes, remove): # Collapses a qubit from the registry. qbit is the id of the qubit, numerated as q0..qn in the registry. mes is the value obtained when measuring it. remove indicates whether it should be removed from the registry.
 		max = 2**qbit
 		cnt = 0
 		rdy = mes == 1
@@ -79,12 +66,12 @@ class QRegistry:
 		if (remove):
 			for qbit in mfd[::-1]:
 				self.state = np.delete(self.state, qbit, 1)
-		Normalize(self.state)
-	def DensityMatrix(self):
-		return np.dot(Ket(self.state), Bra(self.state))
-	def VNEntropy(self, **kwargs):
+		normalize(self.state)
+	def densityMatrix(self):
+		return np.dot(ket(self.state), bra(self.state))
+	def vnEntropy(self, **kwargs):
 		base = kwargs.get('base', "e")
-		#dm = self.DensityMatrix()
+		#dm = self.densityMatrix()
 		#evalues, m = np.linalg.eig(dm)
 		entropy = 0
 		#for e in evalues:
@@ -99,13 +86,13 @@ class QRegistry:
 					entropy += p * np.log(p)/np.log(base)
 		return -entropy
 
-def Prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
+def prob(q, x): # Devuelve la probabilidad de obtener x al medir el qbit q
 	p = 0
 	if (x < q.size):
 		p = cm.polar(q[0,x])[0]**2
 	return p
 
-def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
+def bra(v): # Devuelve el vector pasado como parametro en forma de fila conjugado. <v|
 	b = v[:]
 	s = v.shape
 	if s[0] != 1:
@@ -114,19 +101,19 @@ def Bra(v): # Devuelve el QuBit pasado como parametro en forma de fila. <q|
 		b = np.conjugate(b)
 	return b
 
-def Ket(v): # Devuelve el QuBit pasado como parametro en forma de columna. |q>
+def ket(v): # Devuelve el vector pasado como parametro en forma de columna. |v>
 	k = v[:]
 	s = v.shape
 	if s[1] != 1:
 		k = np.transpose(k)
 	return k
 
-def Superposition(x, y): # Devuelve el estado compuesto por los dos QuBits.
+def superposition(x, y): # Devuelve el estado compuesto por los dos QuBits.
 	z = np.kron(x, y)
-	Normalize(z)
+	normalize(z)
 	return z
 
-def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice que |a|^2 + |b|^2 = 1 para cualquier QuBit. Si no se cumple, modifica el QuBit para que la cumpla si se puede.
+def normalize(state): # Funcion que asegura que se cumpla la propiedad que dice que |a|^2 + |b|^2 = 1 para cualquier QuBit. Si no se cumple, modifica el QuBit para que la cumpla si se puede.
 	sqs = 0
 	for i in range(0, state.size):
 		sqs += cm.polar(state[0, i])[0]**2
@@ -140,7 +127,7 @@ def Normalize(state): # Funcion que asegura que se cumpla la propiedad que dice 
 def QBit(a,b): # Devuelve un QuBit con a y b. q = a|0> + b|1>, con a y b complejos
 	q = np.array([a,b], dtype=complex)
 	q.shape = (1,2)
-	Normalize(q)
+	normalize(q)
 	return q
 
 def QZero(): # Devuelve un QuBit en el estado 0

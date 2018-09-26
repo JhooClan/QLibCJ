@@ -1,20 +1,20 @@
-from structures.qgate import QGate, _getMatrix
+from structures.qgate import QGate, _getMatrix, I
 from structures.qregistry import *
 import gc
 
 class Measure(object):
-	def __init__(self, mask, tasks=[], conds=[], remove=False):
+	def __init__(self, mask, conds=[], remove=False):
+		# Mask is a list of 0 and 1, where 0 means not to measure a certain QuBit and 1 means that the QuBit has to be measured
 		self.mask = mask
 		self.conds = conds
-		self.tasks = tasks
 		self.remove = remove
-	
+
 	def __repr__(self):
 		return ["Measure" if i == 1 else "I" for i in self.mask]
-	
+
 	def __str__(self):
 		return self.__repr__()
-	
+
 	def _mesToList(self, mresults):
 		lin = 0
 		mres = []
@@ -25,41 +25,50 @@ class Measure(object):
 				lin += 1
 			mres.append(tap)
 		return mres
-	
-	def Check(self, qregistry):
-		res = qregistry.Measure(self.mask, remove=self.remove)
+
+	def check(self, qregistry):
+		res = qregistry.measure(self.mask, remove=self.remove)
 		res = self._mesToList(res)
-		r = qregistry
+		# print ("Measure result: " + str(res))
+		r = (qregistry, [res])
 		for cond in self.conds:
-			r = cond.Evaluate(r, res)
-		for task in self.tasks:
-			task(r, res)
+			aux = cond.evaluate(r[0], res)
+			if type(aux) == tuple:
+				r = (aux[0], r[1] + aux[1])
+			else:
+				r = (aux, r[1])
 		return r
-		
+
 
 class Condition(object):
-	def __init__(self, cond, ifcase, elcase = None):
+	def __init__(self, cond, ifcase, elcase, typeif, typeel):
 		# cond is an array of what we expect to have measured in each QuBit. None if we don't care about a certain value. Example: [0, 1, None, None, 1].
 		# ifcase and elcase can be Conditions or QCircuits to be applied to the registry. They can also be functions that take the registry and the result as a parameter.
+		# typeif and typeel are integers from -1 to 2.
+		# -1 means that nothing has to be done in that case.
+		# 0 means that ifcase/elcase is another Condition.
+		# 1 means that ifcase/elcase is a QGate to be applied.
+		# 2 means that ifcase/elcase is a QCircuit.
 		self.cond = cond
 		self.ifcase = ifcase
 		self.elcase = elcase
-	
-	def Evaluate(self, qregistry, mresults):
+		self.typeif = typeif
+		self.typeel = typeel
+
+	def evaluate(self, qregistry, mresults):
 		case = self.elcase
+		t = self.typeel
 		if _specialCompare(self.cond, mresults):
 			case = self.ifcase
-		t = type(case)
-		if t == Condition:
-			r = case.Evaluate(qregistry, mresults)
-		elif t == QGate:
+			t = self.typeif
+		if t == Condition: # Condition
+			r = case.evaluate(qregistry, mresults)
+		elif t == QGate: # QGate
 			r = qregistry
-			r.ApplyGate(case)
-		elif t == QCircuit:
+			r.applyGate(case)
+		elif t == QCircuit: # QCircuit
 			r = case._executeOnce(qregistry)
-		elif t != type(None):
-			r = case(qregistry, mresults)
-		else:
+		else: # Do nothing
 			r = qregistry
 		return r
 
@@ -72,8 +81,8 @@ class QCircuit(object):
 		self.plan = [0]
 		self.ancilla = ancilla
 		self.save = save
-	
-	def AddLine(self, *args):
+
+	def addLine(self, *args):
 		try:
 			if self.save:
 				self.lines.append(list(args))
@@ -93,20 +102,35 @@ class QCircuit(object):
 					self.plan.append(1)
 		finally:
 			gc.collect()
-	
+
 	def _executeOnce(self, qregistry, iterations = 1): # You can pass a QRegistry or an array to build a new QRegistry. When the second option is used, the ancilliary qubits will be added to the specified list.
-		if type(qregistry) != QRegistry:
-			r = QRegistry(qregistry + self.ancilla)
-			ini = qregistry[:]
-		else:
-			r = QRegistry([0])
-			ini = qregistry.state[:]
-			r.state = ini[:]
-			if self.ancilla is not None and len(self.ancilla) > 0:
-				print (self.ancilla)
-				aux = QRegistry(self.ancilla)
-				r.state = np.kron(r.state, aux.state)
+		px = np.array([0,1,1,0], dtype=complex)
+		px.shape = (2,2)
+
+		if type(qregistry) == int:
+			qregistry = QRegistry(qregistry)
+		elif type(qregistry) == list:
+			aux = qregistry[:]
+			del qregistry
+			qregistry = QRegistry(len(aux))
+
+			g = [I(1) if i == 0 else px for i in aux]
+			del aux
+			qregistry.applyGate(*g)
+			del g
+
+		r = QRegistry(1)
+		ini = qregistry.state[:]
+		r.state = ini[:]
+		if self.ancilla is not None and len(self.ancilla) > 0:
+			aux = QRegistry(len(self.ancilla))
+			g = [I(1) if i == 0 else px for i in self.ancilla]
+			aux.applyGate(*g)
+			del g
+			r.state = np.kron(r.state, aux.state)
+			del aux
 		try:
+			mres = []
 			if self.save:
 				for line in self.lines:
 					g = line[0]
@@ -114,27 +138,29 @@ class QCircuit(object):
 						g = _getMatrix(g)
 						for gate in line[1:]:
 							g = np.kron(g, _getMatrix(gate))
-						r.ApplyGate(g)
+						r.applyGate(g)
 						del g
 					else:
-						r = g.Check(r)
+						r = g.check(r)
+						mres += r[1]
+						r = r[0]
 					gc.collect()
 			else:
 				gid = 0
 				mid = 0
 				for task in self.plan:
 					if task == 0:
-						r.ApplyGate(self.matrix[gid])
+						r.applyGate(self.matrix[gid])
 						gid += 1
 					else:
-						r = self.measure[mid].Check(r)
+						r = self.measure[mid].check(r)
 						mid += 1
 					gc.collect()
 		finally:
 			gc.collect()
-		return r
-	
-	def Execute(self, qregistry, iterations = 1):
+		return (r, mres)
+
+	def execute(self, qregistry, iterations = 1):
 		sol = [self._executeOnce(qregistry) for i in range(iterations)]
 		if iterations == 1:
 			sol = sol[0]
